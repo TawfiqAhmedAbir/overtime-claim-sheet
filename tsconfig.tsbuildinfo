@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/downloadmodal.tsx","./src/components/entryform.tsx","./src/components/entrylist.tsx","./src/components/monthpicker.tsx","./src/components/settings.tsx","./src/lib/dates.ts","./src/lib/excel.ts","./src/lib/hours.ts","./src/lib/storage.ts"],"version":"5.9.3"}

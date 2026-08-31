@@ -15,6 +15,8 @@ export default defineConfig({
         description: 'Log overtime and download your Synnovis claim sheet',
         theme_color: '#123a67',
         background_color: '#f4f7fb',
+        start_url: './',
+        scope: './',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

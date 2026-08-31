@@ -6,7 +6,7 @@ import type {
 } from '../types';
 import { SHIFT_PRESETS } from '../types';
 import { daysInMonth, formatEntryDate } from '../lib/dates';
-import { findEntryByDay } from '../lib/storage';
+import { findEntryByDay, createEntryId } from '../lib/storage';
 
 interface EntryFormProps {
   selection: MonthSelection;
@@ -59,7 +59,10 @@ export default function EntryForm({
     }
 
     onSave({
-      id: existing && existing.id !== entry?.id ? existing.id : entry?.id ?? crypto.randomUUID(),
+      id:
+        existing && existing.id !== entry?.id
+          ? existing.id
+          : entry?.id ?? createEntryId(),
       day,
       start,
       finish,

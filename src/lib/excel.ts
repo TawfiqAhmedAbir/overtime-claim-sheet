@@ -66,6 +66,23 @@ function applyTotal(sheet: ExcelJS.Worksheet, entries: OvertimeEntry[]): void {
   sheet.getCell('H46').value = formatTotalHours(total);
 }
 
+function stripFormulaResults(sheet: ExcelJS.Worksheet): void {
+  sheet.eachRow((row) => {
+    row.eachCell({ includeEmpty: false }, (cell) => {
+      const value = cell.value;
+      if (
+        value &&
+        typeof value === 'object' &&
+        ('formula' in value || 'sharedFormula' in value)
+      ) {
+        const formulaValue = { ...value };
+        delete formulaValue.result;
+        cell.value = formulaValue;
+      }
+    });
+  });
+}
+
 export async function generateClaimSheet(
   selection: MonthSelection,
   profile: Profile,
@@ -85,6 +102,7 @@ export async function generateClaimSheet(
   clearOvertimeRows(sheet, daysInMonth(selection));
   applyEntries(sheet, entries);
   applyTotal(sheet, entries);
+  stripFormulaResults(sheet);
 
   const output = await workbook.xlsx.writeBuffer();
   return new Blob([output], {

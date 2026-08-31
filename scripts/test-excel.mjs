@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import JSZip from 'jszip';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -71,6 +72,23 @@ function parseShiftHours(shift) {
   return Number(match[1]) + (match[2] ? Number(match[2]) / 60 : 0);
 }
 
+function stripFormulaResults(sheet) {
+  sheet.eachRow((row) => {
+    row.eachCell({ includeEmpty: false }, (cell) => {
+      const value = cell.value;
+      if (
+        value &&
+        typeof value === 'object' &&
+        ('formula' in value || 'sharedFormula' in value)
+      ) {
+        const formulaValue = { ...value };
+        delete formulaValue.result;
+        cell.value = formulaValue;
+      }
+    });
+  });
+}
+
 async function main() {
   const buffer = await readFile(templatePath);
   const workbook = new ExcelJS.Workbook();
@@ -101,9 +119,18 @@ async function main() {
     0,
   );
   sheet.getCell('H46').value = formatTotalHours(total);
+  stripFormulaResults(sheet);
 
   const out = await workbook.xlsx.writeBuffer();
   await writeFile(outputPath, Buffer.from(out));
+
+  const zip = await JSZip.loadAsync(out);
+  const xml = await zip.file('xl/worksheets/sheet1.xml').async('string');
+  const nanCount = (xml.match(/<v>NaN<\/v>/g) || []).length;
+  if (nanCount > 0) {
+    console.error(`FAIL: found ${nanCount} NaN cached values in output`);
+    process.exit(1);
+  }
 
   const checks = [
     ['D21', '5 hour '],

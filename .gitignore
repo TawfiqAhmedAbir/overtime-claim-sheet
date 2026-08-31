@@ -1,5 +1,9 @@
 node_modules
 dist
 tmp-golden-test.xlsx
+tmp-test-clear.xlsx
+tmp-*.xlsx
 .DS_Store
 *.local
+.vite
+tsconfig.tsbuildinfo

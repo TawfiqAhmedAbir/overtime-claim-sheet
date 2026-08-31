@@ -24,10 +24,9 @@ npm run test:excel
 
 ## GitHub Pages
 
-1. Push this repo to GitHub
-2. Enable GitHub Pages from GitHub Actions
-3. Share the published URL with your mom
-4. She can tap **Add to Home Screen** on her phone
+Live site: https://tawfiqahmedabir.github.io/overtime-claim-sheet/
+
+Pushing to `main` deploys automatically. On a phone, open the site and use **Add to Home Screen**.
 
 ## How it works
 
