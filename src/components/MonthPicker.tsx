@@ -1,8 +1,10 @@
+import type { ChangeEvent } from 'react';
 import type { MonthSelection } from '../types';
 import {
   addMonths,
   formatMonthLabel,
-  recentMonthOptions,
+  fromMonthInputValue,
+  toMonthInputValue,
 } from '../lib/dates';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
@@ -12,19 +14,17 @@ interface MonthPickerProps {
 }
 
 export default function MonthPicker({ value, onChange }: MonthPickerProps) {
-  const options = recentMonthOptions(12);
-  const oldest = options[options.length - 1];
-  const canGoBack =
-    value.year > oldest.year ||
-    (value.year === oldest.year && value.month > oldest.month);
-
   function handlePrev() {
-    if (!canGoBack) return;
     onChange(addMonths(value, -1));
   }
 
   function handleNext() {
     onChange(addMonths(value, 1));
+  }
+
+  function handleMonthInput(event: ChangeEvent<HTMLInputElement>) {
+    const next = fromMonthInputValue(event.target.value);
+    if (next) onChange(next);
   }
 
   return (
@@ -33,12 +33,20 @@ export default function MonthPicker({ value, onChange }: MonthPickerProps) {
         type="button"
         className="month-nav-button"
         onClick={handlePrev}
-        disabled={!canGoBack}
         aria-label="Previous month"
       >
         <ChevronLeftIcon size={18} />
       </button>
-      <span className="month-picker-label">{formatMonthLabel(value)}</span>
+      <label className="month-picker-select">
+        <span className="month-picker-label">{formatMonthLabel(value)}</span>
+        <input
+          type="month"
+          className="month-picker-input"
+          value={toMonthInputValue(value)}
+          onChange={handleMonthInput}
+          aria-label="Choose month"
+        />
+      </label>
       <button
         type="button"
         className="month-nav-button"

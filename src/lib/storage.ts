@@ -4,20 +4,35 @@ import type {
   Preferences,
   Profile,
   UsualShift,
+  WorkSettings,
 } from '../types';
 import {
   DEFAULT_PREFERENCES,
   DEFAULT_USUAL_SHIFT,
+  DEFAULT_WORK_SETTINGS,
 } from '../types';
 import { monthKey } from './dates';
 
 const STORAGE_KEY = 'overtime-sheet-v1';
 
+interface StoredUsualShift extends Partial<UsualShift> {
+  shift?: string;
+}
+
 interface StoredData {
   profile: Profile;
   entries: Record<string, OvertimeEntry[]>;
-  usualShift?: UsualShift;
+  usualShift?: StoredUsualShift;
+  workSettings?: WorkSettings;
   preferences?: Preferences;
+}
+
+function normalizeUsualShift(raw?: StoredUsualShift): UsualShift {
+  return {
+    start: raw?.start ?? DEFAULT_USUAL_SHIFT.start,
+    finish: raw?.finish ?? DEFAULT_USUAL_SHIFT.finish,
+    break: raw?.break ?? DEFAULT_USUAL_SHIFT.break,
+  };
 }
 
 function emptyData(profile?: Profile): StoredData {
@@ -29,6 +44,7 @@ function emptyData(profile?: Profile): StoredData {
     },
     entries: {},
     usualShift: DEFAULT_USUAL_SHIFT,
+    workSettings: DEFAULT_WORK_SETTINGS,
     preferences: DEFAULT_PREFERENCES,
   };
 }
@@ -41,7 +57,11 @@ function readStorage(): StoredData {
     return {
       profile: parsed.profile ?? emptyData().profile,
       entries: parsed.entries ?? {},
-      usualShift: parsed.usualShift ?? DEFAULT_USUAL_SHIFT,
+      usualShift: normalizeUsualShift(parsed.usualShift),
+      workSettings: {
+        ...DEFAULT_WORK_SETTINGS,
+        ...parsed.workSettings,
+      },
       preferences: {
         ...DEFAULT_PREFERENCES,
         ...parsed.preferences,
@@ -68,12 +88,22 @@ export function saveProfile(profile: Profile): void {
 }
 
 export function loadUsualShift(): UsualShift {
-  return readStorage().usualShift ?? DEFAULT_USUAL_SHIFT;
+  return normalizeUsualShift(readStorage().usualShift);
 }
 
 export function saveUsualShift(usualShift: UsualShift): void {
   const data = readStorage();
   data.usualShift = usualShift;
+  writeStorage(data);
+}
+
+export function loadWorkSettings(): WorkSettings {
+  return readStorage().workSettings ?? DEFAULT_WORK_SETTINGS;
+}
+
+export function saveWorkSettings(workSettings: WorkSettings): void {
+  const data = readStorage();
+  data.workSettings = workSettings;
   writeStorage(data);
 }
 

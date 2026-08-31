@@ -1,13 +1,23 @@
 import { useState } from 'react';
-import type { BreakOption, Preferences, Profile, UsualShift } from '../types';
-import { JOB_TITLES, SHIFT_PRESETS, SITES } from '../types';
+import BreakScrollPicker from './BreakScrollPicker';
+import ScrollPicker from './ScrollPicker';
+import TimeScrollPicker from './TimeScrollPicker';
+import type { Preferences, Profile, UsualShift, WorkSettings } from '../types';
+import { JOB_TITLES, SITES } from '../types';
+import {
+  formatShiftClaimFromMinutes,
+  normalShiftOptions,
+  parseShiftHours,
+} from '../lib/hours';
 
 interface SettingsProps {
   profile: Profile;
   usualShift: UsualShift;
+  workSettings: WorkSettings;
   preferences: Preferences;
   onSaveProfile: (profile: Profile) => void;
   onSaveUsualShift: (usualShift: UsualShift) => void;
+  onSaveWorkSettings: (workSettings: WorkSettings) => void;
   onSavePreferences: (preferences: Preferences) => void;
   onClose: () => void;
 }
@@ -15,20 +25,29 @@ interface SettingsProps {
 export default function Settings({
   profile,
   usualShift,
+  workSettings,
   preferences,
   onSaveProfile,
   onSaveUsualShift,
+  onSaveWorkSettings,
   onSavePreferences,
   onClose,
 }: SettingsProps) {
   const [profileDraft, setProfileDraft] = useState(profile);
   const [shiftDraft, setShiftDraft] = useState(usualShift);
+  const [workDraft, setWorkDraft] = useState(workSettings);
   const [prefsDraft, setPrefsDraft] = useState(preferences);
+
+  const normalShiftText = formatShiftClaimFromMinutes(
+    Math.round(workDraft.normalShiftHours * 60),
+  );
+  const normalOptions = normalShiftOptions(8);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     onSaveProfile(profileDraft);
     onSaveUsualShift(shiftDraft);
+    onSaveWorkSettings(workDraft);
     onSavePreferences(prefsDraft);
     onClose();
   }
@@ -80,73 +99,40 @@ export default function Settings({
         </select>
       </div>
 
-      <h3 className="settings-section-title">My usual overtime</h3>
+      <h3 className="settings-section-title">Normal shift length</h3>
+      <p className="day-picker-selected">
+        Weekday overtime = time on site minus break minus this amount.
+      </p>
+      <ScrollPicker
+        label="Normal shift"
+        options={normalOptions}
+        value={normalShiftText}
+        onChange={(text) => {
+          setWorkDraft({ normalShiftHours: parseShiftHours(text) });
+        }}
+      />
+
+      <h3 className="settings-section-title">My usual times</h3>
       <p className="day-picker-selected">
         These fill in automatically when you add a new entry.
       </p>
 
-      <div className="field">
-        <label htmlFor="usualStart">Usual start</label>
-        <input
-          id="usualStart"
-          type="time"
-          value={shiftDraft.start}
-          onChange={(event) =>
-            setShiftDraft({ ...shiftDraft, start: event.target.value })
-          }
-        />
-      </div>
+      <TimeScrollPicker
+        label="Usual start"
+        value={shiftDraft.start}
+        onChange={(start) => setShiftDraft({ ...shiftDraft, start })}
+      />
 
-      <div className="field">
-        <label htmlFor="usualFinish">Usual finish</label>
-        <input
-          id="usualFinish"
-          type="time"
-          value={shiftDraft.finish}
-          onChange={(event) =>
-            setShiftDraft({ ...shiftDraft, finish: event.target.value })
-          }
-        />
-      </div>
+      <TimeScrollPicker
+        label="Usual finish"
+        value={shiftDraft.finish}
+        onChange={(finish) => setShiftDraft({ ...shiftDraft, finish })}
+      />
 
-      <div className="field">
-        <label>Usual break</label>
-        <div className="chip-row">
-          {(['', '30 min', '1 hour'] as BreakOption[]).map((option) => (
-            <button
-              key={option || 'none'}
-              type="button"
-              className={`chip ${shiftDraft.break === option ? 'active' : ''}`}
-              onClick={() => setShiftDraft({ ...shiftDraft, break: option })}
-            >
-              {option || 'No break'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="field">
-        <label htmlFor="usualShift">Usual hours claimed</label>
-        <div className="chip-row">
-          {SHIFT_PRESETS.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              className={`chip ${shiftDraft.shift === preset ? 'active' : ''}`}
-              onClick={() => setShiftDraft({ ...shiftDraft, shift: preset })}
-            >
-              {preset}
-            </button>
-          ))}
-        </div>
-        <input
-          id="usualShift"
-          value={shiftDraft.shift}
-          onChange={(event) =>
-            setShiftDraft({ ...shiftDraft, shift: event.target.value })
-          }
-        />
-      </div>
+      <BreakScrollPicker
+        value={shiftDraft.break}
+        onChange={(breakOption) => setShiftDraft({ ...shiftDraft, break: breakOption })}
+      />
 
       <h3 className="settings-section-title">Display</h3>
       <label className="checkbox-field">

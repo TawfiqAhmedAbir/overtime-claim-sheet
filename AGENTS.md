@@ -26,7 +26,7 @@ The downloaded file must come from the **exact bundled template**:
 
 ---
 
-## Current status (V2 — shipped)
+## Current status (V3 — shipped)
 
 | Area | Status |
 |------|--------|
@@ -38,30 +38,29 @@ The downloaded file must come from the **exact bundled template**:
 | PWA + offline after first visit | Done |
 | GitHub Pages auto-deploy on push to `main` | Done |
 | Excel opens without recovery warning | Fixed (`stripFormulaResults`) |
-| Warm UI (teal/coral palette, StatCard, icons) | Done (V2) |
-| In-app ConfirmSheet (no native dialogs) | Done (V2) |
-| DayPicker with today shortcut | Done (V2) |
-| Remember usual shift | Done (V2) |
-| Same as last time | Done (V2) |
-| Share sheet (Web Share API + download fallback) | Done (V2) |
-| Undo delete (5s toast) | Done (V2) |
-| Large text mode | Done (V2) |
-| First-run “Add to Home Screen” tip | Done (V2) |
+| Warm UI, ConfirmSheet, share/download | Done (V2) |
+| Scroll-wheel time/break/overtime pickers | Done (V3) |
+| Auto overtime calculation | Done (V3) |
+| Normal shift length in Settings (default 4 hr) | Done (V3) |
+| Weekend + UK bank holiday full-OT days | Done (V3) |
+| Overtime override via scroll only (no typing) | Done (V3) |
 
 ---
 
 ## How the app works (user flow)
 
 1. Open app → current month, profile snippet, total hours hero
-2. **+ Add overtime** or **Same as last time** → DayPicker, times, break, hours claimed → **Save**
-3. New entries pre-fill from **usual shift** (Settings → “My usual overtime”)
-4. **Download claim sheet** → share on phone if supported, else download → `Claim Sheet {Month} {Year}.xlsx`
+2. **+ Add overtime** or **Same as last time** → scroll pickers for date, start, finish, break
+3. App **calculates overtime** and shows it — scroll to override if wrong
+4. **Download claim sheet** → share or download → `Claim Sheet {Month} {Year}.xlsx`
 
 **Business rules:**
 
 - **One entry per calendar day** (Excel has one row per day). Adding the same day again **replaces** the existing entry.
-- **Column D (Shift)** = overtime **claimed** as text (e.g. `5 hour 30 min`) — **not** auto-calculated from start/finish minus break.
-- **Times** in E/F are supporting detail; mom enters claimed hours separately.
+- **Column D (Shift)** = overtime as text (`5 hour 30 min`) — **auto-calculated** by default; user may override via scroll wheel only (no free typing).
+- **Overtime formula (weekday):** `(finish − start − break) − normalShiftHours` (normal shift from Settings, default **4 hr**).
+- **Weekends + UK bank holidays:** whole on-site time counts as overtime (no normal-shift subtraction). Manual **“Whole shift is overtime”** toggle for edge cases (option C).
+- **Times** in E/F and break in G are still written to Excel as entered.
 
 ---
 
@@ -113,17 +112,15 @@ Run `npm run test:excel` after any change to `src/lib/excel.ts`.
 ```
 public/template.xlsx     ← exact Synnovis template (never generate from scratch)
 src/
-  App.tsx                ← screens, toasts, confirm sheets, share/download
+  App.tsx
   components/
-    ConfirmSheet.tsx     ← in-app confirm/alert (replaces window.confirm)
-    DayPicker.tsx        ← day chips + today + month grid
-    StatCard.tsx         ← month total hero
-    EntryForm, EntryList, MonthPicker, Settings, DownloadModal, Icons
+    ScrollPicker, TimeScrollPicker, BreakScrollPicker, OvertimeScrollPicker
+    DayPicker, EntryForm, EntryList, Settings, DownloadModal, ConfirmSheet, StatCard
   lib/
-    excel.ts             ← template load, fill, shareOrDownloadClaimSheet
-    storage.ts           ← profile, entries, usualShift, preferences
-    hours.ts, dates.ts
-  types.ts               ← Profile, UsualShift, Preferences, OvertimeEntry
+    hours.ts             ← calculateOvertime, formatShiftClaimFromMinutes
+    bankHolidays.ts      ← UK bank holiday dates (extend annually)
+    excel.ts, storage.ts, dates.ts
+  types.ts               ← WorkSettings, UsualShift, OvertimeEntry
 .github/workflows/deploy.yml
 ```
 
@@ -131,7 +128,7 @@ src/
 
 **Storage key:** `overtime-sheet-v1` in localStorage
 
-**Stored fields:** `profile`, `entries` (by month key), `usualShift`, `preferences` (`largeText`, `rememberUsualShift`, `dismissedTips`)
+**Stored fields:** `profile`, `entries`, `usualShift` (start/finish/break), `workSettings` (normalShiftHours), `preferences`
 
 ---
 
@@ -142,14 +139,15 @@ npm install
 npm run dev          # local dev (also exposes LAN URL for phone testing)
 npm run build        # production build → dist/
 npm run preview      # serve dist/
-npm run test:excel   # golden test — must pass after excel.ts changes
+npm run test:excel     # golden test — must pass after excel.ts changes
+npm run test:overtime  # overtime calc unit tests — must pass after hours.ts changes
 ```
 
 ---
 
 ## Deployment
 
-**Shipped:** V1 Aug 2026, V2 UI/UX Aug 2026 — live on GitHub Pages.
+**Shipped:** V1 Aug 2026, V2 UI/UX Aug 2026, V3 auto overtime Aug 2026 — live on GitHub Pages.
 
 Push to **`main`** → GitHub Actions (`.github/workflows/deploy.yml`) builds with `npm ci && npm run build` and deploys `dist/` to Pages.
 
@@ -166,14 +164,23 @@ Push to **`main`** → GitHub Actions (`.github/workflows/deploy.yml`) builds wi
 
 ---
 
-## V3 backlog (not built yet)
+## V4 backlog (not built yet)
 
 Prioritise only when user asks:
 
-1. **Month-end reminder** — needs notification permission strategy
-2. **Export/backup** entries for new phone (JSON import/export UI)
-3. **Calendar month grid** as default day picker (optional UX tweak)
-4. **Code-split ExcelJS** — reduce main bundle size (~1.1 MB)
+1. **Export/backup** entries for new phone (JSON import/export UI)
+2. **Month-end reminder** — needs notification permission strategy
+3. **Code-split ExcelJS** — reduce main bundle size
+4. **Extend bank holiday list** beyond 2027 automatically
+
+---
+
+## V3 backlog (shipped Aug 2026)
+
+1. ~~Auto overtime calculation~~
+2. ~~Scroll-wheel time/break/overtime pickers~~
+3. ~~Normal shift in Settings~~
+4. ~~Weekend + bank holiday rules~~
 
 ---
 

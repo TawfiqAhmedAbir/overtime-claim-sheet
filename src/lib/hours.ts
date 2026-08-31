@@ -1,4 +1,131 @@
+import type { BreakOption } from '../types';
+
 const HOUR_PATTERN = /^(\d+)\s*hour(?:s)?(?:\s+(\d+)\s*min)?$/i;
+
+export const BREAK_OPTIONS: BreakOption[] = [
+  '',
+  '15 min',
+  '30 min',
+  '45 min',
+  '1 hour',
+  '1 hour 30 min',
+];
+
+export function breakMinutesFromOption(breakOption: BreakOption): number {
+  switch (breakOption) {
+    case '15 min':
+      return 15;
+    case '30 min':
+      return 30;
+    case '45 min':
+      return 45;
+    case '1 hour':
+      return 60;
+    case '1 hour 30 min':
+      return 90;
+    default:
+      return 0;
+  }
+}
+
+export function breakOptionFromMinutes(minutes: number): BreakOption {
+  if (minutes <= 0) return '';
+  if (minutes <= 15) return '15 min';
+  if (minutes <= 30) return '30 min';
+  if (minutes <= 45) return '45 min';
+  if (minutes <= 60) return '1 hour';
+  return '1 hour 30 min';
+}
+
+export function breakLabel(breakOption: BreakOption): string {
+  if (!breakOption) return 'No break';
+  return breakOption;
+}
+
+export function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return (hours ?? 0) * 60 + (minutes ?? 0);
+}
+
+export function minutesToTime(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+export function sessionMinutes(
+  start: string,
+  finish: string,
+  breakMinutes: number,
+): number {
+  const startM = timeToMinutes(start);
+  const finishM = timeToMinutes(finish);
+  let duration = finishM - startM;
+  if (duration < 0) duration += 24 * 60;
+  return Math.max(0, duration - breakMinutes);
+}
+
+export function formatShiftClaimFromMinutes(totalMinutes: number): string {
+  const rounded = Math.max(0, Math.round(totalMinutes));
+  const hours = Math.floor(rounded / 60);
+  const minutes = rounded % 60;
+
+  if (hours === 0 && minutes === 0) return '0 hour';
+  if (minutes === 0) {
+    return hours === 1 ? '1 hour' : `${hours} hour`;
+  }
+  if (minutes === 30) {
+    return hours === 0 ? '30 min' : `${hours} hour 30 min`;
+  }
+  if (hours === 0) return `${minutes} min`;
+  return `${hours} hour ${minutes} min`;
+}
+
+export function formatShiftClaim(hours: number, minutes: 0 | 30 = 0): string {
+  return formatShiftClaimFromMinutes(hours * 60 + minutes);
+}
+
+export function allOvertimeOptions(maxHours = 12): string[] {
+  const options: string[] = [];
+  for (let mins = 0; mins <= maxHours * 60; mins += 30) {
+    options.push(formatShiftClaimFromMinutes(mins));
+  }
+  return options;
+}
+
+export interface CalculateOvertimeInput {
+  start: string;
+  finish: string;
+  breakMinutes: number;
+  normalShiftHours: number;
+  fullOvertimeDay: boolean;
+}
+
+export interface CalculateOvertimeResult {
+  minutes: number;
+  text: string;
+  onSiteMinutes: number;
+}
+
+export function calculateOvertime(
+  input: CalculateOvertimeInput,
+): CalculateOvertimeResult {
+  const onSiteMinutes = sessionMinutes(
+    input.start,
+    input.finish,
+    input.breakMinutes,
+  );
+  const normalMinutes = input.fullOvertimeDay
+    ? 0
+    : Math.round(input.normalShiftHours * 60);
+  const overtimeMinutes = Math.max(0, onSiteMinutes - normalMinutes);
+
+  return {
+    minutes: overtimeMinutes,
+    text: formatShiftClaimFromMinutes(overtimeMinutes),
+    onSiteMinutes,
+  };
+}
 
 export function parseShiftHours(shift: string): number {
   const trimmed = shift.trim();
@@ -14,7 +141,14 @@ export function parseShiftHours(shift: string): number {
   const simple = trimmed.match(/^(\d+(?:\.\d+)?)\s*h(?:r|our)?s?$/i);
   if (simple) return Number(simple[1]);
 
+  const minsOnly = trimmed.match(/^(\d+)\s*min$/i);
+  if (minsOnly) return Number(minsOnly[1]) / 60;
+
   return 0;
+}
+
+export function shiftTextToMinutes(text: string): number {
+  return Math.round(parseShiftHours(text) * 60);
 }
 
 export function formatTotalHours(total: number): string {
@@ -54,3 +188,21 @@ export function formatHoursShort(total: number): string {
 export function sumShiftHours(shifts: string[]): number {
   return shifts.reduce((sum, shift) => sum + parseShiftHours(shift), 0);
 }
+
+export function normalShiftOptions(maxHours = 8): string[] {
+  const options: string[] = [];
+  for (let mins = 30; mins <= maxHours * 60; mins += 30) {
+    options.push(formatShiftClaimFromMinutes(mins));
+  }
+  return options;
+}
+
+export function normalShiftHoursFromText(text: string): number {
+  return parseShiftHours(text);
+}
+
+export const TIME_HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) =>
+  String(hour).padStart(2, '0'),
+);
+
+export const TIME_MINUTE_OPTIONS = ['00', '15', '30', '45'];

@@ -1,4 +1,5 @@
 import type { MonthSelection } from '../types';
+import { isBankHolidayDate } from './bankHolidays';
 
 const MONTH_NAMES = [
   'January',
@@ -84,8 +85,6 @@ export function formatTimeLabel(value: string): string {
 
 export function breakToSheetValue(breakOption: string): string | null {
   if (!breakOption) return null;
-  if (breakOption === '30 min') return '30 min';
-  if (breakOption === '1 hour') return '1 hour';
   return breakOption;
 }
 
@@ -128,6 +127,17 @@ export function addMonths(
   return { year: date.getFullYear(), month: date.getMonth() + 1 };
 }
 
+export function toMonthInputValue({ year, month }: MonthSelection): string {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+export function fromMonthInputValue(value: string): MonthSelection | null {
+  if (!value) return null;
+  const [year, month] = value.split('-').map(Number);
+  if (!year || !month || month < 1 || month > 12) return null;
+  return { year, month };
+}
+
 export function dayOfWeekIndex(selection: MonthSelection, day: number): number {
   return new Date(selection.year, selection.month - 1, day).getDay();
 }
@@ -137,4 +147,28 @@ export function monthKeysEqual(
   b: MonthSelection,
 ): boolean {
   return a.year === b.year && a.month === b.month;
+}
+
+export function isWeekend(selection: MonthSelection, day: number): boolean {
+  const dow = new Date(selection.year, selection.month - 1, day).getDay();
+  return dow === 0 || dow === 6;
+}
+
+export function isBankHoliday(selection: MonthSelection, day: number): boolean {
+  return isBankHolidayDate(selection.year, selection.month, day);
+}
+
+export function isAutoFullOvertimeDay(
+  selection: MonthSelection,
+  day: number,
+): boolean {
+  return isWeekend(selection, day) || isBankHoliday(selection, day);
+}
+
+export function isFullOvertimeDay(
+  selection: MonthSelection,
+  day: number,
+  manualFullOvertime: boolean,
+): boolean {
+  return manualFullOvertime || isAutoFullOvertimeDay(selection, day);
 }

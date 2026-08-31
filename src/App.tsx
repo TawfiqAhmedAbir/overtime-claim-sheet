@@ -23,10 +23,12 @@ import {
   loadPreferences,
   loadProfile,
   loadUsualShift,
+  loadWorkSettings,
   restoreEntry,
   savePreferences,
   saveProfile,
   saveUsualShift,
+  saveWorkSettings,
   upsertEntry,
 } from './lib/storage';
 import type { EntryDraft, MonthSelection, OvertimeEntry, Profile } from './types';
@@ -55,6 +57,7 @@ export default function App() {
   const [selection, setSelection] = useState<MonthSelection>(currentMonth());
   const [profile, setProfile] = useState<Profile>(() => loadProfile());
   const [usualShift, setUsualShift] = useState(() => loadUsualShift());
+  const [workSettings, setWorkSettings] = useState(() => loadWorkSettings());
   const [preferences, setPreferences] = useState(() => loadPreferences());
   const [entries, setEntries] = useState<OvertimeEntry[]>(() =>
     loadEntries(currentMonth()),
@@ -105,7 +108,6 @@ export default function App() {
         start: entry.start,
         finish: entry.finish,
         break: entry.break,
-        shift: entry.shift,
       };
       saveUsualShift(nextUsual);
       setUsualShift(nextUsual);
@@ -194,7 +196,6 @@ export default function App() {
       start: last.start,
       finish: last.finish,
       break: last.break,
-      shift: last.shift,
       day: undefined,
     };
 
@@ -290,6 +291,7 @@ export default function App() {
           selection={selection}
           initialDraft={addDraft}
           usualShift={usualShift}
+          workSettings={workSettings}
           rememberUsualShift={preferences.rememberUsualShift}
           onRememberUsualShiftChange={(value) => {
             const next = { ...preferences, rememberUsualShift: value };
@@ -311,6 +313,7 @@ export default function App() {
           selection={selection}
           entry={editingEntry}
           usualShift={usualShift}
+          workSettings={workSettings}
           rememberUsualShift={preferences.rememberUsualShift}
           onRememberUsualShiftChange={(value) => {
             const next = { ...preferences, rememberUsualShift: value };
@@ -331,6 +334,7 @@ export default function App() {
         <Settings
           profile={profile}
           usualShift={usualShift}
+          workSettings={workSettings}
           preferences={preferences}
           onSaveProfile={(nextProfile) => {
             saveProfile(nextProfile);
@@ -340,6 +344,10 @@ export default function App() {
           onSaveUsualShift={(nextUsual) => {
             saveUsualShift(nextUsual);
             setUsualShift(nextUsual);
+          }}
+          onSaveWorkSettings={(nextWork) => {
+            saveWorkSettings(nextWork);
+            setWorkSettings(nextWork);
           }}
           onSavePreferences={(nextPreferences) => {
             savePreferences(nextPreferences);

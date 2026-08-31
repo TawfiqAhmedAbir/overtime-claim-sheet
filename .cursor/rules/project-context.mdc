@@ -11,15 +11,16 @@ This repo is a **mobile PWA** for logging phlebotomy overtime and downloading th
 
 **Repo:** https://github.com/TawfiqAhmedAbir/overtime-claim-sheet (`main` → auto-deploy to Pages)
 
-**Full context:** [AGENTS.md](../../AGENTS.md) — status, cell map, architecture, V3 backlog, next steps. **V2 shipped** (Aug 2026).
+**Full context:** [AGENTS.md](../../AGENTS.md) — status, cell map, architecture, V4 backlog, next steps. **V3 shipped** (Aug 2026).
 
 ## Quick rules for agents
 
 1. Excel output must load `public/template.xlsx`, fill mapped cells only, then download/share.
-2. After any `src/lib/excel.ts` change: run `npm run test:excel` and verify no Excel recovery warning.
-3. Keep `stripFormulaResults()` before save — prevents ExcelJS writing invalid `NaN` cached values.
-4. Shift column (D) = user-entered claimed hours text, not calculated from times.
-5. Row for day N: `N + 14`. Month anchor: cell **H7** (UTC noon, 1st of month).
-6. Use `ConfirmSheet` for confirms — no `window.confirm` / `window.alert`.
-7. User prefers **plan first, wait for "Go"** before implementing non-trivial changes.
-8. **Do not git commit** unless the user explicitly asks.
+2. After any `src/lib/excel.ts` change: run `npm run test:excel`.
+3. After any `src/lib/hours.ts` change: run `npm run test:overtime`.
+4. Keep `stripFormulaResults()` before save — prevents ExcelJS writing invalid `NaN` cached values.
+5. Column D = auto-calculated overtime text; override via scroll only. Formula: weekday `(finish − start − break) − normalShift`; weekend/BH = full on-site time.
+6. Row for day N: `N + 14`. Month anchor: cell **H7** (UTC noon, 1st of month).
+7. Use `ConfirmSheet` for confirms — no `window.confirm` / `window.alert`.
+8. User prefers **plan first, wait for "Go"** before implementing non-trivial changes.
+9. **Do not git commit** unless the user explicitly asks.

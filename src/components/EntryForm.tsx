@@ -1,15 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
+import BreakScrollPicker from './BreakScrollPicker';
 import DayPicker from './DayPicker';
+import OvertimeScrollPicker from './OvertimeScrollPicker';
+import TimeScrollPicker from './TimeScrollPicker';
 import type {
   BreakOption,
   EntryDraft,
   MonthSelection,
   OvertimeEntry,
   UsualShift,
+  WorkSettings,
 } from '../types';
-import { SHIFT_PRESETS } from '../types';
-import { defaultDayForMonth } from '../lib/dates';
-import { formatTotalHours, sumShiftHours } from '../lib/hours';
+import {
+  defaultDayForMonth,
+  isAutoFullOvertimeDay,
+  isBankHoliday,
+  isWeekend,
+} from '../lib/dates';
+import {
+  breakMinutesFromOption,
+  calculateOvertime,
+  formatTotalHours,
+  sumShiftHours,
+} from '../lib/hours';
 import { findEntryByDay, loadEntries, createEntryId } from '../lib/storage';
 
 interface EntryFormProps {
@@ -17,15 +30,13 @@ interface EntryFormProps {
   entry?: OvertimeEntry;
   initialDraft?: Partial<EntryDraft>;
   usualShift: UsualShift;
+  workSettings: WorkSettings;
   rememberUsualShift: boolean;
   onRememberUsualShiftChange: (value: boolean) => void;
   monthTotalHours: number;
   onSave: (entry: OvertimeEntry, updateUsual: boolean) => void;
   onCancel: () => void;
-  onDuplicateDay: (
-    day: number,
-    onReplace: () => void,
-  ) => void;
+  onDuplicateDay: (day: number, onReplace: () => void) => void;
 }
 
 export default function EntryForm({
@@ -33,6 +44,7 @@ export default function EntryForm({
   entry,
   initialDraft,
   usualShift,
+  workSettings,
   rememberUsualShift,
   onRememberUsualShiftChange,
   monthTotalHours,
@@ -40,28 +52,52 @@ export default function EntryForm({
   onCancel,
   onDuplicateDay,
 }: EntryFormProps) {
+  const initialDay = entry?.day ?? initialDraft?.day ?? defaultDayForMonth(selection);
+
   const defaults = entry
     ? {
         day: entry.day,
         start: entry.start,
         finish: entry.finish,
         break: entry.break,
-        shift: entry.shift,
       }
     : {
-        day: initialDraft?.day ?? defaultDayForMonth(selection),
+        day: initialDay,
         start: initialDraft?.start ?? usualShift.start,
         finish: initialDraft?.finish ?? usualShift.finish,
         break: initialDraft?.break ?? usualShift.break,
-        shift: initialDraft?.shift ?? usualShift.shift,
       };
 
   const [day, setDay] = useState(defaults.day);
   const [start, setStart] = useState(defaults.start);
   const [finish, setFinish] = useState(defaults.finish);
   const [breakOption, setBreakOption] = useState<BreakOption>(defaults.break);
-  const [shift, setShift] = useState(defaults.shift);
+  const [fullOvertime, setFullOvertime] = useState(
+    entry?.fullOvertimeDay ??
+      initialDraft?.fullOvertimeDay ??
+      isAutoFullOvertimeDay(selection, defaults.day),
+  );
+  const [shiftOverride, setShiftOverride] = useState<string | null>(
+    entry?.shiftOverridden ? entry.shift : null,
+  );
   const [error, setError] = useState('');
+
+  const autoFullOvertime = isAutoFullOvertimeDay(selection, day);
+
+  const calculated = useMemo(
+    () =>
+      calculateOvertime({
+        start,
+        finish,
+        breakMinutes: breakMinutesFromOption(breakOption),
+        normalShiftHours: workSettings.normalShiftHours,
+        fullOvertimeDay: fullOvertime,
+      }),
+    [start, finish, breakOption, workSettings.normalShiftHours, fullOvertime],
+  );
+
+  const shift = shiftOverride ?? calculated.text;
+  const shiftOverridden = shiftOverride !== null;
 
   const daysWithEntries = useMemo(() => {
     const currentId = entry?.id;
@@ -81,6 +117,40 @@ export default function EntryForm({
     setDay(initialDraft?.day ?? defaultDayForMonth(selection));
   }, [selection, entry, initialDraft?.day]);
 
+  function handleDayChange(newDay: number) {
+    setDay(newDay);
+    if (!entry) {
+      setFullOvertime(isAutoFullOvertimeDay(selection, newDay));
+    }
+    setShiftOverride(null);
+  }
+
+  function handleStartChange(value: string) {
+    setStart(value);
+    setShiftOverride(null);
+  }
+
+  function handleFinishChange(value: string) {
+    setFinish(value);
+    setShiftOverride(null);
+  }
+
+  function handleBreakChange(value: BreakOption) {
+    setBreakOption(value);
+    setShiftOverride(null);
+  }
+
+  function handleFullOvertimeChange(checked: boolean) {
+    setFullOvertime(checked);
+    setShiftOverride(null);
+  }
+
+  function dayTypeHint(): string | null {
+    if (isBankHoliday(selection, day)) return 'Bank holiday — whole shift counts as overtime';
+    if (isWeekend(selection, day)) return 'Weekend — whole shift counts as overtime';
+    return null;
+  }
+
   function submitEntry() {
     const existing = findEntryByDay(selection, day);
     const payload: OvertimeEntry = {
@@ -92,7 +162,9 @@ export default function EntryForm({
       start,
       finish,
       break: breakOption,
-      shift: shift.trim(),
+      shift,
+      fullOvertimeDay: fullOvertime,
+      shiftOverridden,
     };
 
     onSave(payload, rememberUsualShift && !entry);
@@ -102,8 +174,10 @@ export default function EntryForm({
     event.preventDefault();
     setError('');
 
-    if (!shift.trim()) {
-      setError('Please enter the overtime hours you are claiming.');
+    if (calculated.minutes <= 0 && !shiftOverridden) {
+      setError(
+        'No overtime hours calculated. Check your times or turn on “Whole shift is overtime”.',
+      );
       return;
     }
 
@@ -121,72 +195,47 @@ export default function EntryForm({
     submitEntry();
   }
 
+  function handleOvertimeChange(value: string) {
+    if (value === calculated.text) {
+      setShiftOverride(null);
+    } else {
+      setShiftOverride(value);
+    }
+  }
+
   return (
     <form className="panel form-grid" onSubmit={handleSubmit}>
       <DayPicker
         selection={selection}
         value={day}
-        onChange={setDay}
+        onChange={handleDayChange}
         daysWithEntries={daysWithEntries}
       />
 
-      <div className="field">
-        <label htmlFor="start">Start time</label>
-        <input
-          id="start"
-          type="time"
-          value={start}
-          onChange={(event) => setStart(event.target.value)}
-        />
+      <TimeScrollPicker label="Start time" value={start} onChange={handleStartChange} />
+      <TimeScrollPicker label="Finish time" value={finish} onChange={handleFinishChange} />
+      <BreakScrollPicker value={breakOption} onChange={handleBreakChange} />
+
+      <div className="full-ot-toggle">
+        <label className="checkbox-field">
+          <input
+            type="checkbox"
+            checked={fullOvertime}
+            onChange={(event) => handleFullOvertimeChange(event.target.checked)}
+          />
+          Whole shift is overtime (weekend / bank holiday)
+        </label>
+        {autoFullOvertime ? (
+          <p className="day-picker-selected">{dayTypeHint()}</p>
+        ) : null}
       </div>
 
-      <div className="field">
-        <label htmlFor="finish">Finish time</label>
-        <input
-          id="finish"
-          type="time"
-          value={finish}
-          onChange={(event) => setFinish(event.target.value)}
-        />
-      </div>
-
-      <div className="field">
-        <label>Break</label>
-        <div className="chip-row">
-          {(['', '30 min', '1 hour'] as BreakOption[]).map((option) => (
-            <button
-              key={option || 'none'}
-              type="button"
-              className={`chip ${breakOption === option ? 'active' : ''}`}
-              onClick={() => setBreakOption(option)}
-            >
-              {option || 'No break'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="field">
-        <label htmlFor="shift">Overtime you&apos;re claiming</label>
-        <div className="chip-row">
-          {SHIFT_PRESETS.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              className={`chip ${shift === preset ? 'active' : ''}`}
-              onClick={() => setShift(preset)}
-            >
-              {preset}
-            </button>
-          ))}
-        </div>
-        <input
-          id="shift"
-          value={shift}
-          onChange={(event) => setShift(event.target.value)}
-          placeholder="e.g. 5 hour 30 min"
-        />
-      </div>
+      <OvertimeScrollPicker
+        value={shift}
+        calculatedValue={calculated.text}
+        overridden={shiftOverridden}
+        onChange={handleOvertimeChange}
+      />
 
       {!entry ? (
         <label className="checkbox-field">
