@@ -17,7 +17,6 @@ import { shareOrDownloadClaimSheet } from './lib/excel';
 import { sumShiftHours } from './lib/hours';
 import {
   deleteEntry,
-  dismissTip,
   getMostRecentEntry,
   loadEntries,
   loadPreferences,
@@ -51,8 +50,6 @@ interface ToastState {
   onAction?: () => void;
 }
 
-const HOME_SCREEN_TIP = 'add-to-home-screen';
-
 export default function App() {
   const [selection, setSelection] = useState<MonthSelection>(currentMonth());
   const [profile, setProfile] = useState<Profile>(() => loadProfile());
@@ -69,9 +66,6 @@ export default function App() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [showDownload, setShowDownload] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [showHomeTip, setShowHomeTip] = useState(
-    () => !loadPreferences().dismissedTips.includes(HOME_SCREEN_TIP),
-  );
 
   useEffect(() => {
     setEntries(loadEntries(selection));
@@ -203,12 +197,6 @@ export default function App() {
     setScreen('add');
   }
 
-  function dismissHomeTip() {
-    dismissTip(HOME_SCREEN_TIP);
-    setPreferences(loadPreferences());
-    setShowHomeTip(false);
-  }
-
   return (
     <div className="app-shell">
       <header className="top-bar">
@@ -247,22 +235,6 @@ export default function App() {
 
       {screen === 'home' ? (
         <>
-          {showHomeTip ? (
-            <div className="tip-banner">
-              <p>
-                Tip: open this site in your phone browser and tap{' '}
-                <strong>Add to Home Screen</strong> to use it like an app.
-              </p>
-              <button
-                type="button"
-                className="tip-dismiss"
-                onClick={dismissHomeTip}
-              >
-                Got it
-              </button>
-            </div>
-          ) : null}
-
           <StatCard totalHours={totalHours} entryCount={entries.length} />
 
           <section className="summary-card">

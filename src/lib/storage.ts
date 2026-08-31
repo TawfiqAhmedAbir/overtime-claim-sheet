@@ -59,8 +59,9 @@ function readStorage(): StoredData {
       entries: parsed.entries ?? {},
       usualShift: normalizeUsualShift(parsed.usualShift),
       workSettings: {
-        ...DEFAULT_WORK_SETTINGS,
-        ...parsed.workSettings,
+        normalShiftHours: Number.isFinite(parsed.workSettings?.normalShiftHours)
+          ? parsed.workSettings!.normalShiftHours
+          : DEFAULT_WORK_SETTINGS.normalShiftHours,
       },
       preferences: {
         ...DEFAULT_PREFERENCES,

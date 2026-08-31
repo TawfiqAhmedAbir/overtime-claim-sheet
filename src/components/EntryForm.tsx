@@ -21,6 +21,7 @@ import {
   breakMinutesFromOption,
   calculateOvertime,
   formatTotalHours,
+  normalizeBreakOption,
   sumShiftHours,
 } from '../lib/hours';
 import { findEntryByDay, loadEntries, createEntryId } from '../lib/storage';
@@ -71,7 +72,9 @@ export default function EntryForm({
   const [day, setDay] = useState(defaults.day);
   const [start, setStart] = useState(defaults.start);
   const [finish, setFinish] = useState(defaults.finish);
-  const [breakOption, setBreakOption] = useState<BreakOption>(defaults.break);
+  const [breakOption, setBreakOption] = useState<BreakOption>(
+    normalizeBreakOption(defaults.break),
+  );
   const [fullOvertime, setFullOvertime] = useState(
     entry?.fullOvertimeDay ??
       initialDraft?.fullOvertimeDay ??
@@ -84,16 +87,20 @@ export default function EntryForm({
 
   const autoFullOvertime = isAutoFullOvertimeDay(selection, day);
 
+  const normalShiftHours = Number.isFinite(workSettings.normalShiftHours)
+    ? workSettings.normalShiftHours
+    : 4;
+
   const calculated = useMemo(
     () =>
       calculateOvertime({
         start,
         finish,
         breakMinutes: breakMinutesFromOption(breakOption),
-        normalShiftHours: workSettings.normalShiftHours,
+        normalShiftHours,
         fullOvertimeDay: fullOvertime,
       }),
-    [start, finish, breakOption, workSettings.normalShiftHours, fullOvertime],
+    [start, finish, breakOption, normalShiftHours, fullOvertime],
   );
 
   const shift = shiftOverride ?? calculated.text;
@@ -234,6 +241,9 @@ export default function EntryForm({
         value={shift}
         calculatedValue={calculated.text}
         overridden={shiftOverridden}
+        onSiteMinutes={calculated.onSiteMinutes}
+        normalShiftHours={normalShiftHours}
+        fullOvertimeDay={fullOvertime}
         onChange={handleOvertimeChange}
       />
 

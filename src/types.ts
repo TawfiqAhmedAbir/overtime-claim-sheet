@@ -4,13 +4,9 @@ export interface Profile {
   site: string;
 }
 
-export type BreakOption =
-  | ''
-  | '15 min'
-  | '30 min'
-  | '45 min'
-  | '1 hour'
-  | '1 hour 30 min';
+import type { BreakOption } from './lib/hours';
+
+export type { BreakOption };
 
 export interface OvertimeEntry {
   id: string;

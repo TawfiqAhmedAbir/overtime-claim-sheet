@@ -27,12 +27,13 @@ export default function ScrollPicker({
   return (
     <div className="scroll-picker-column">
       <span className="scroll-picker-label">{label}</span>
+      <p className="scroll-picker-hint">Scroll up or down to choose</p>
       <div className="scroll-picker-list" ref={listRef} role="listbox" aria-label={label}>
-        {options.map((option) => {
+        {options.map((option, index) => {
           const active = option === value;
           return (
             <button
-              key={option}
+              key={`${option}-${index}`}
               type="button"
               role="option"
               aria-selected={active}

@@ -1,45 +1,45 @@
-import type { BreakOption } from '../types';
-
 const HOUR_PATTERN = /^(\d+)\s*hour(?:s)?(?:\s+(\d+)\s*min)?$/i;
 
-export const BREAK_OPTIONS: BreakOption[] = [
-  '',
-  '15 min',
-  '30 min',
-  '45 min',
-  '1 hour',
-  '1 hour 30 min',
-];
+export const BREAK_OPTIONS = buildBreakOptions();
 
-export function breakMinutesFromOption(breakOption: BreakOption): number {
-  switch (breakOption) {
-    case '15 min':
-      return 15;
-    case '30 min':
-      return 30;
-    case '45 min':
-      return 45;
-    case '1 hour':
-      return 60;
-    case '1 hour 30 min':
-      return 90;
-    default:
-      return 0;
+export type BreakOption = (typeof BREAK_OPTIONS)[number];
+
+function buildBreakOptions(): string[] {
+  const options: string[] = [''];
+  for (let minutes = 15; minutes <= 120; minutes += 15) {
+    options.push(formatBreakOption(minutes));
   }
+  return options;
 }
 
-export function breakOptionFromMinutes(minutes: number): BreakOption {
-  if (minutes <= 0) return '';
-  if (minutes <= 15) return '15 min';
-  if (minutes <= 30) return '30 min';
-  if (minutes <= 45) return '45 min';
-  if (minutes <= 60) return '1 hour';
-  return '1 hour 30 min';
+export function formatBreakOption(minutes: number): string {
+  if (minutes === 0) return '';
+  if (minutes === 60) return '1 hour';
+  if (minutes === 90) return '1 hour 30 min';
+  if (minutes === 120) return '2 hour';
+  return `${minutes} min`;
 }
 
-export function breakLabel(breakOption: BreakOption): string {
+export function breakMinutesFromOption(breakOption: string): number {
+  if (!breakOption) return 0;
+  if (breakOption === '1 hour') return 60;
+  if (breakOption === '1 hour 30 min') return 90;
+  if (breakOption === '2 hour') return 120;
+  const match = breakOption.match(/^(\d+)\s*min$/);
+  if (match) return Number(match[1]);
+  return 0;
+}
+
+export function breakLabel(breakOption: string): string {
   if (!breakOption) return 'No break';
   return breakOption;
+}
+
+export function normalizeBreakOption(value: string): BreakOption {
+  const minutes = breakMinutesFromOption(value);
+  const normalized = formatBreakOption(minutes) as BreakOption;
+  if (BREAK_OPTIONS.includes(normalized)) return normalized;
+  return '';
 }
 
 export function timeToMinutes(time: string): number {
@@ -115,9 +115,12 @@ export function calculateOvertime(
     input.finish,
     input.breakMinutes,
   );
+  const normalHours = Number.isFinite(input.normalShiftHours)
+    ? input.normalShiftHours
+    : 4;
   const normalMinutes = input.fullOvertimeDay
     ? 0
-    : Math.round(input.normalShiftHours * 60);
+    : Math.round(normalHours * 60);
   const overtimeMinutes = Math.max(0, onSiteMinutes - normalMinutes);
 
   return {

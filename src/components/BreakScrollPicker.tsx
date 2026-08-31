@@ -1,6 +1,6 @@
 import ScrollPicker from './ScrollPicker';
 import type { BreakOption } from '../types';
-import { BREAK_OPTIONS, breakLabel } from '../lib/hours';
+import { BREAK_OPTIONS, breakLabel, normalizeBreakOption } from '../lib/hours';
 
 interface BreakScrollPickerProps {
   value: BreakOption;
@@ -18,7 +18,7 @@ export default function BreakScrollPicker({
         label="Break length"
         options={BREAK_OPTIONS}
         value={value}
-        onChange={(option) => onChange(option as BreakOption)}
+        onChange={(option) => onChange(normalizeBreakOption(option))}
         formatOption={(option) => breakLabel(option as BreakOption)}
       />
     </div>
