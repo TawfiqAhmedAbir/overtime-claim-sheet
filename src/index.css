@@ -1,0 +1,342 @@
+:root {
+  color: #10243b;
+  background: #f4f7fb;
+  font-family: Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top, rgba(56, 132, 214, 0.12), transparent 32rem),
+    #f4f7fb;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  max-width: 32rem;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 1rem 1rem 6.5rem;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.brand p {
+  margin: 0;
+  color: #5d7088;
+  font-size: 0.92rem;
+}
+
+.icon-button,
+.text-button {
+  border: none;
+  background: transparent;
+  color: #123a67;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+}
+
+.icon-button:hover,
+.text-button:hover {
+  background: rgba(18, 58, 103, 0.08);
+}
+
+.summary-card,
+.panel,
+.entry-card,
+.modal-card {
+  background: #fff;
+  border: 1px solid rgba(16, 36, 59, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(16, 36, 59, 0.06);
+}
+
+.summary-card {
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.summary-card label {
+  display: block;
+  font-size: 0.85rem;
+  color: #5d7088;
+  margin-bottom: 0.35rem;
+}
+
+.month-select {
+  width: 100%;
+  border: 1px solid rgba(16, 36, 59, 0.12);
+  border-radius: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  font-size: 1rem;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(16, 36, 59, 0.08);
+}
+
+.total-line strong {
+  font-size: 1.15rem;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.entry-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.entry-card {
+  padding: 1rem;
+}
+
+.entry-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.entry-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.entry-meta {
+  color: #5d7088;
+  font-size: 0.92rem;
+}
+
+.entry-claim {
+  margin-top: 0.65rem;
+  font-weight: 600;
+  color: #123a67;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #5d7088;
+}
+
+.empty-state p {
+  margin: 0.35rem 0 0;
+}
+
+.action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1rem;
+  background: rgba(244, 247, 251, 0.92);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(16, 36, 59, 0.08);
+}
+
+.action-bar-inner {
+  max-width: 32rem;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 0.95rem 1.2rem;
+  font-weight: 600;
+}
+
+.primary-button {
+  background: #123a67;
+  color: #fff;
+}
+
+.secondary-button {
+  background: #e8eef6;
+  color: #123a67;
+}
+
+.danger-button {
+  background: #ffe8e8;
+  color: #9a1b1b;
+}
+
+.panel {
+  padding: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.field label {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  border: 1px solid rgba(16, 36, 59, 0.12);
+  border-radius: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: #fff;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  border: 1px solid rgba(18, 58, 103, 0.15);
+  background: #fff;
+  color: #123a67;
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem;
+}
+
+.chip.active {
+  background: #123a67;
+  border-color: #123a67;
+  color: #fff;
+}
+
+.form-actions {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.toast {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #123a67;
+  color: #fff;
+  padding: 0.85rem 1.1rem;
+  border-radius: 999px;
+  box-shadow: 0 12px 30px rgba(16, 36, 59, 0.18);
+  z-index: 30;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 36, 59, 0.45);
+  display: grid;
+  place-items: end center;
+  padding: 1rem;
+  z-index: 20;
+}
+
+.modal-card {
+  width: min(100%, 32rem);
+  padding: 1.1rem;
+}
+
+.modal-card h2 {
+  margin: 0 0 0.5rem;
+}
+
+.modal-card p {
+  margin: 0.35rem 0;
+  color: #5d7088;
+}
+
+.modal-actions {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.inline-note {
+  background: #eef5ff;
+  border-radius: 0.85rem;
+  padding: 0.85rem 1rem;
+  color: #27466b;
+  font-size: 0.92rem;
+}
+
+@media (min-width: 640px) {
+  .app-shell {
+    padding-top: 1.5rem;
+  }
+
+  .modal-backdrop {
+    place-items: center;
+  }
+}
