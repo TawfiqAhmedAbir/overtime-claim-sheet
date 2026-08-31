@@ -1,0 +1,24 @@
+---
+description: Overtime claim sheet app — project context, Excel rules, and next steps
+alwaysApply: true
+---
+
+# Overtime Claim Sheet — read AGENTS.md
+
+This repo is a **mobile PWA** for logging phlebotomy overtime and downloading the **official Synnovis Excel template** (`public/template.xlsx`). **Never recreate the spreadsheet layout.**
+
+**Live:** https://tawfiqahmedabir.github.io/overtime-claim-sheet/
+
+**Repo:** https://github.com/TawfiqAhmedAbir/overtime-claim-sheet (`main` → auto-deploy to Pages)
+
+**Full context:** [AGENTS.md](../../AGENTS.md) — status, cell map, architecture, V2 backlog, next steps. **V1 shipped** (Aug 2026).
+
+## Quick rules for agents
+
+1. Excel output must load `public/template.xlsx`, fill mapped cells only, then download.
+2. After any `src/lib/excel.ts` change: run `npm run test:excel` and verify no Excel recovery warning.
+3. Keep `stripFormulaResults()` before save — prevents ExcelJS writing invalid `NaN` cached values.
+4. Shift column (D) = user-entered claimed hours text, not calculated from times.
+5. Row for day N: `N + 14`. Month anchor: cell **H7** (UTC noon, 1st of month).
+6. User prefers **plan first, wait for "Go"** before implementing non-trivial changes.
+7. **Do not git commit** unless the user explicitly asks.
