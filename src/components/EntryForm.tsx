@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import BreakPicker from './BreakPicker';
 import DayPicker from './DayPicker';
 import OvertimeField from './OvertimeField';
-import TimeStepPicker, { type TimeStep } from './TimeStepPicker';
+import TimeField from './TimeField';
 import type {
   BreakOption,
   EntryDraft,
@@ -84,8 +84,6 @@ export default function EntryForm({
     entry?.shiftOverridden ? entry.shift : null,
   );
   const [error, setError] = useState('');
-  const [timeStep, setTimeStep] = useState<TimeStep>(entry ? 'finish' : 'start');
-  const [startConfirmed, setStartConfirmed] = useState(Boolean(entry));
 
   const autoFullOvertime = isAutoFullOvertimeDay(selection, day);
 
@@ -221,19 +219,19 @@ export default function EntryForm({
         daysWithEntries={daysWithEntries}
       />
 
-      <TimeStepPicker
-        start={start}
-        finish={finish}
-        step={timeStep}
-        startConfirmed={startConfirmed}
-        onStepChange={setTimeStep}
-        onStartConfirmed={() => setStartConfirmed(true)}
-        onStartChange={handleStartChange}
-        onFinishChange={handleFinishChange}
+      <TimeField
+        id="start"
+        label="Start time"
+        value={start}
+        onChange={handleStartChange}
+      />
+      <TimeField
+        id="finish"
+        label="Finish time"
+        value={finish}
+        onChange={handleFinishChange}
       />
 
-      {startConfirmed ? (
-        <>
       <BreakPicker value={breakOption} onChange={handleBreakChange} />
 
       <div className="full-ot-toggle">
@@ -269,8 +267,6 @@ export default function EntryForm({
           />
           Use these times next time
         </label>
-      ) : null}
-        </>
       ) : null}
 
       <div className="form-footer-total">

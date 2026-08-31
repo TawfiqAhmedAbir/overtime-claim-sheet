@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import BreakPicker from './BreakPicker';
-import Stepper from './Stepper';
-import TimeInput from './TimeInput';
+import TimeField from './TimeField';
 import type { Preferences, Profile, UsualShift, WorkSettings } from '../types';
 import { JOB_TITLES, SITES } from '../types';
 import {
   formatShiftClaimFromMinutes,
+  normalShiftHoursFromText,
+  normalShiftOptions,
 } from '../lib/hours';
 
 interface SettingsProps {
@@ -36,7 +37,10 @@ export default function Settings({
   const [workDraft, setWorkDraft] = useState(workSettings);
   const [prefsDraft, setPrefsDraft] = useState(preferences);
 
-  const normalShiftMinutes = Math.round(workDraft.normalShiftHours * 60);
+  const normalShiftText = formatShiftClaimFromMinutes(
+    Math.round(workDraft.normalShiftHours * 60),
+  );
+  const normalOptions = normalShiftOptions(8);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -98,30 +102,39 @@ export default function Settings({
       <p className="day-picker-selected">
         Weekday overtime = time on site minus break minus this amount.
       </p>
-      <Stepper
-        label="Normal shift"
-        value={normalShiftMinutes}
-        min={30}
-        max={480}
-        step={30}
-        onChange={(minutes) => {
-          setWorkDraft({ normalShiftHours: minutes / 60 });
-        }}
-        formatValue={(minutes) => formatShiftClaimFromMinutes(minutes)}
-      />
+      <div className="field">
+        <label htmlFor="normal-shift">Normal shift</label>
+        <select
+          id="normal-shift"
+          value={normalShiftText}
+          onChange={(event) => {
+            setWorkDraft({
+              normalShiftHours: normalShiftHoursFromText(event.target.value),
+            });
+          }}
+        >
+          {normalOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <h3 className="settings-section-title">My usual times</h3>
       <p className="day-picker-selected">
         These fill in automatically when you add a new entry.
       </p>
 
-      <TimeInput
+      <TimeField
+        id="usual-start"
         label="Usual start"
         value={shiftDraft.start}
         onChange={(start) => setShiftDraft({ ...shiftDraft, start })}
       />
 
-      <TimeInput
+      <TimeField
+        id="usual-finish"
         label="Usual finish"
         value={shiftDraft.finish}
         onChange={(finish) => setShiftDraft({ ...shiftDraft, finish })}

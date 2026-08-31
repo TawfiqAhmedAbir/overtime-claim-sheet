@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import DurationInput from './DurationInput';
 import type { BreakOption } from '../types';
 import {
+  BREAK_OPTIONS,
   BREAK_QUICK_OPTIONS,
   breakLabel,
   isQuickBreakOption,
@@ -11,6 +11,10 @@ interface BreakPickerProps {
   value: BreakOption;
   onChange: (value: BreakOption) => void;
 }
+
+const BREAK_OTHER_OPTIONS = BREAK_OPTIONS.filter(
+  (option) => !(BREAK_QUICK_OPTIONS as readonly string[]).includes(option),
+);
 
 export default function BreakPicker({ value, onChange }: BreakPickerProps) {
   const initialCustom = !isQuickBreakOption(value);
@@ -23,8 +27,8 @@ export default function BreakPicker({ value, onChange }: BreakPickerProps) {
 
   function selectOther() {
     setShowCustom(true);
-    if (isQuickBreakOption(value)) {
-      onChange('15 min' as BreakOption);
+    if (isQuickBreakOption(value) && BREAK_OTHER_OPTIONS[0]) {
+      onChange(BREAK_OTHER_OPTIONS[0] as BreakOption);
     }
   }
 
@@ -55,8 +59,19 @@ export default function BreakPicker({ value, onChange }: BreakPickerProps) {
       </div>
 
       {showCustom || !isQuickBreakOption(value) ? (
-        <div className="break-picker-custom">
-          <DurationInput value={value} onChange={onChange} />
+        <div className="field break-picker-custom">
+          <label htmlFor="break-other">Other break length</label>
+          <select
+            id="break-other"
+            value={value}
+            onChange={(event) => onChange(event.target.value as BreakOption)}
+          >
+            {BREAK_OTHER_OPTIONS.map((option) => (
+              <option key={option || 'none'} value={option}>
+                {breakLabel(option)}
+              </option>
+            ))}
+          </select>
         </div>
       ) : null}
     </div>

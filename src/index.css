@@ -702,157 +702,23 @@ button:disabled {
     flex-direction: row;
   }
 
-  .time-input-row,
-  .duration-input-row,
-  .overtime-stepper-row {
-    max-width: 22rem;
-    margin: 0 auto;
-  }
 }
 
-/* V5 stepper inputs */
-.stepper {
-  flex: 1;
-  min-width: 0;
-}
-
-.stepper-label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  text-align: center;
-  margin-bottom: 0.35rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.stepper-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.35rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.85rem;
-  background: #fff;
-}
-
-.stepper-btn {
-  flex-shrink: 0;
-  width: 3rem;
-  height: 3rem;
-  min-width: 48px;
-  min-height: 48px;
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-  background: #f0fdfa;
-  color: var(--color-primary-dark);
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.stepper-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.stepper-value {
-  flex: 1;
-  text-align: center;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--color-primary-dark);
+/* V6 native time + simple selects */
+.time-field-input {
+  font-size: 1.25rem;
+  min-height: 52px;
   font-variant-numeric: tabular-nums;
 }
 
-.time-input,
-.duration-input,
-.time-step-picker,
 .break-picker,
 .overtime-field {
   display: grid;
   gap: 0.65rem;
 }
 
-.time-input-row,
-.duration-input-row,
-.overtime-stepper-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.35rem;
-}
-
-.time-input-sep {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-  padding-bottom: 1.75rem;
-  flex-shrink: 0;
-}
-
-.time-step {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.time-step-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-}
-
-.time-step-next {
-  width: 100%;
-}
-
-.time-step-summary {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  width: 100%;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.85rem;
-  background: #ecfdf5;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-}
-
-.time-step-summary-label {
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
-}
-
-.time-step-summary-value {
-  flex: 1;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-}
-
-.time-step-summary-check {
-  color: var(--color-primary);
-  font-weight: 700;
-}
-
 .break-picker-chips {
   flex-wrap: wrap;
-}
-
-.break-picker-custom {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.break-picker-custom-value {
-  margin: 0;
-  font-size: 0.92rem;
-  color: var(--color-text-muted);
-  text-align: center;
 }
 
 .full-ot-toggle {
@@ -914,14 +780,9 @@ button:disabled {
   color: var(--color-accent);
 }
 
-html.large-text .stepper-value {
-  font-size: 1.6rem;
-}
-
-html.large-text .stepper-btn {
-  width: 3.25rem;
-  height: 3.25rem;
-  font-size: 1.65rem;
+html.large-text .time-field-input {
+  font-size: 1.4rem;
+  min-height: 56px;
 }
 
 html.large-text .overtime-result-value {

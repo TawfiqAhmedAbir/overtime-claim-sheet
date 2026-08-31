@@ -1,8 +1,6 @@
-import Stepper from './Stepper';
 import {
+  allOvertimeOptions,
   formatShiftClaimFromMinutes,
-  overtimePartsFromText,
-  overtimeTextFromParts,
 } from '../lib/hours';
 
 interface OvertimeFieldProps {
@@ -24,19 +22,11 @@ export default function OvertimeField({
   normalShiftHours,
   fullOvertimeDay,
 }: OvertimeFieldProps) {
-  const parts = overtimePartsFromText(value);
+  const options = allOvertimeOptions(12);
   const onSiteText = formatShiftClaimFromMinutes(onSiteMinutes);
   const normalText = formatShiftClaimFromMinutes(
     Math.round(normalShiftHours * 60),
   );
-
-  function updateHours(hours: number) {
-    onChange(overtimeTextFromParts(hours, parts.minutes));
-  }
-
-  function updateMinutes(minutes: number) {
-    onChange(overtimeTextFromParts(parts.hours, minutes));
-  }
 
   return (
     <div className="overtime-field">
@@ -47,7 +37,7 @@ export default function OvertimeField({
           <span className="overtime-result-note">Calculated for you</span>
         ) : (
           <span className="overtime-result-note overtime-result-note-override">
-            You changed this — tap +/− to adjust
+            You changed this — pick a different amount below
           </span>
         )}
       </div>
@@ -66,28 +56,23 @@ export default function OvertimeField({
 
       {!overridden ? (
         <p className="overtime-calc-hint">
-          Not right? Tap +/− below to pick a different amount.
+          Calculated for you — change below only if wrong.
         </p>
       ) : null}
 
-      <div className="overtime-stepper-row">
-        <Stepper
-          label="Hours"
-          value={parts.hours}
-          min={0}
-          max={12}
-          step={1}
-          onChange={updateHours}
-        />
-        <Stepper
-          label="Minutes"
-          value={parts.minutes}
-          min={0}
-          max={30}
-          step={30}
-          onChange={updateMinutes}
-          formatValue={(v) => String(v).padStart(2, '0')}
-        />
+      <div className="field">
+        <label htmlFor="overtime-amount">Overtime amount</label>
+        <select
+          id="overtime-amount"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
