@@ -1,14 +1,9 @@
-import { useMemo, useState } from 'react';
-import WheelPicker from './WheelPicker';
+import { useState } from 'react';
+import DurationInput from './DurationInput';
 import type { BreakOption } from '../types';
 import {
-  BREAK_HOUR_OPTIONS,
-  BREAK_MINUTE_OPTIONS,
   BREAK_QUICK_OPTIONS,
   breakLabel,
-  breakMinutesFromOption,
-  breakMinutesToParts,
-  breakPartsToOption,
   isQuickBreakOption,
 } from '../lib/hours';
 
@@ -21,11 +16,6 @@ export default function BreakPicker({ value, onChange }: BreakPickerProps) {
   const initialCustom = !isQuickBreakOption(value);
   const [showCustom, setShowCustom] = useState(initialCustom);
 
-  const customParts = useMemo(
-    () => breakMinutesToParts(breakMinutesFromOption(value)),
-    [value],
-  );
-
   function selectQuick(option: BreakOption) {
     setShowCustom(false);
     onChange(option);
@@ -36,14 +26,6 @@ export default function BreakPicker({ value, onChange }: BreakPickerProps) {
     if (isQuickBreakOption(value)) {
       onChange('15 min' as BreakOption);
     }
-  }
-
-  function updateCustomHour(hour: string) {
-    onChange(breakPartsToOption(hour, customParts.minute));
-  }
-
-  function updateCustomMinute(minute: string) {
-    onChange(breakPartsToOption(customParts.hour, minute));
   }
 
   const quickActive = !showCustom && isQuickBreakOption(value);
@@ -74,25 +56,7 @@ export default function BreakPicker({ value, onChange }: BreakPickerProps) {
 
       {showCustom || !isQuickBreakOption(value) ? (
         <div className="break-picker-custom">
-          <div className="time-wheels-row">
-            <WheelPicker
-              label="Hour"
-              options={BREAK_HOUR_OPTIONS}
-              value={customParts.hour}
-              onChange={updateCustomHour}
-            />
-            <span className="time-wheels-sep">:</span>
-            <WheelPicker
-              label="Min"
-              options={BREAK_MINUTE_OPTIONS}
-              value={customParts.minute}
-              onChange={updateCustomMinute}
-              formatOption={(option) => option}
-            />
-          </div>
-          <p className="break-picker-custom-value">
-            Selected: <strong>{breakLabel(value)}</strong>
-          </p>
+          <DurationInput value={value} onChange={onChange} />
         </div>
       ) : null}
     </div>

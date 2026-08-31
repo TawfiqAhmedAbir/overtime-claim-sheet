@@ -1,10 +1,11 @@
-import WheelPicker from './WheelPicker';
+import Stepper from './Stepper';
 import {
-  allOvertimeOptions,
   formatShiftClaimFromMinutes,
+  overtimePartsFromText,
+  overtimeTextFromParts,
 } from '../lib/hours';
 
-interface OvertimeScrollPickerProps {
+interface OvertimeFieldProps {
   value: string;
   onChange: (value: string) => void;
   calculatedValue: string;
@@ -14,7 +15,7 @@ interface OvertimeScrollPickerProps {
   fullOvertimeDay: boolean;
 }
 
-export default function OvertimeScrollPicker({
+export default function OvertimeField({
   value,
   onChange,
   calculatedValue,
@@ -22,15 +23,23 @@ export default function OvertimeScrollPicker({
   onSiteMinutes,
   normalShiftHours,
   fullOvertimeDay,
-}: OvertimeScrollPickerProps) {
-  const options = allOvertimeOptions(12);
+}: OvertimeFieldProps) {
+  const parts = overtimePartsFromText(value);
   const onSiteText = formatShiftClaimFromMinutes(onSiteMinutes);
   const normalText = formatShiftClaimFromMinutes(
     Math.round(normalShiftHours * 60),
   );
 
+  function updateHours(hours: number) {
+    onChange(overtimeTextFromParts(hours, parts.minutes));
+  }
+
+  function updateMinutes(minutes: number) {
+    onChange(overtimeTextFromParts(parts.hours, minutes));
+  }
+
   return (
-    <div className="overtime-scroll-picker">
+    <div className="overtime-field">
       <div className="overtime-result">
         <span className="overtime-result-label">Overtime</span>
         <strong className="overtime-result-value">{value}</strong>
@@ -38,7 +47,7 @@ export default function OvertimeScrollPicker({
           <span className="overtime-result-note">Calculated for you</span>
         ) : (
           <span className="overtime-result-note overtime-result-note-override">
-            You changed this — scroll to adjust
+            You changed this — tap +/− to adjust
           </span>
         )}
       </div>
@@ -57,16 +66,29 @@ export default function OvertimeScrollPicker({
 
       {!overridden ? (
         <p className="overtime-calc-hint">
-          Not right? Scroll below to pick a different amount.
+          Not right? Tap +/− below to pick a different amount.
         </p>
       ) : null}
 
-      <WheelPicker
-        label="Overtime hours"
-        options={options}
-        value={value}
-        onChange={onChange}
-      />
+      <div className="overtime-stepper-row">
+        <Stepper
+          label="Hours"
+          value={parts.hours}
+          min={0}
+          max={12}
+          step={1}
+          onChange={updateHours}
+        />
+        <Stepper
+          label="Minutes"
+          value={parts.minutes}
+          min={0}
+          max={30}
+          step={30}
+          onChange={updateMinutes}
+          formatValue={(v) => String(v).padStart(2, '0')}
+        />
+      </div>
     </div>
   );
 }

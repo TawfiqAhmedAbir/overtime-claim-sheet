@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import BreakPicker from './BreakPicker';
 import DayPicker from './DayPicker';
-import OvertimeScrollPicker from './OvertimeScrollPicker';
+import OvertimeField from './OvertimeField';
 import TimeStepPicker, { type TimeStep } from './TimeStepPicker';
 import type {
   BreakOption,
@@ -250,7 +250,7 @@ export default function EntryForm({
         ) : null}
       </div>
 
-      <OvertimeScrollPicker
+      <OvertimeField
         value={shift}
         calculatedValue={calculated.text}
         overridden={shiftOverridden}

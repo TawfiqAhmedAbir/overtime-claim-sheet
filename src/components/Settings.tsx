@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import BreakPicker from './BreakPicker';
-import WheelPicker from './WheelPicker';
-import TimeWheels from './TimeWheels';
+import Stepper from './Stepper';
+import TimeInput from './TimeInput';
 import type { Preferences, Profile, UsualShift, WorkSettings } from '../types';
 import { JOB_TITLES, SITES } from '../types';
 import {
   formatShiftClaimFromMinutes,
-  normalShiftOptions,
-  parseShiftHours,
 } from '../lib/hours';
 
 interface SettingsProps {
@@ -38,10 +36,7 @@ export default function Settings({
   const [workDraft, setWorkDraft] = useState(workSettings);
   const [prefsDraft, setPrefsDraft] = useState(preferences);
 
-  const normalShiftText = formatShiftClaimFromMinutes(
-    Math.round(workDraft.normalShiftHours * 60),
-  );
-  const normalOptions = normalShiftOptions(8);
+  const normalShiftMinutes = Math.round(workDraft.normalShiftHours * 60);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -103,13 +98,16 @@ export default function Settings({
       <p className="day-picker-selected">
         Weekday overtime = time on site minus break minus this amount.
       </p>
-      <WheelPicker
+      <Stepper
         label="Normal shift"
-        options={normalOptions}
-        value={normalShiftText}
-        onChange={(text) => {
-          setWorkDraft({ normalShiftHours: parseShiftHours(text) });
+        value={normalShiftMinutes}
+        min={30}
+        max={480}
+        step={30}
+        onChange={(minutes) => {
+          setWorkDraft({ normalShiftHours: minutes / 60 });
         }}
+        formatValue={(minutes) => formatShiftClaimFromMinutes(minutes)}
       />
 
       <h3 className="settings-section-title">My usual times</h3>
@@ -117,13 +115,13 @@ export default function Settings({
         These fill in automatically when you add a new entry.
       </p>
 
-      <TimeWheels
+      <TimeInput
         label="Usual start"
         value={shiftDraft.start}
         onChange={(start) => setShiftDraft({ ...shiftDraft, start })}
       />
 
-      <TimeWheels
+      <TimeInput
         label="Usual finish"
         value={shiftDraft.finish}
         onChange={(finish) => setShiftDraft({ ...shiftDraft, finish })}
