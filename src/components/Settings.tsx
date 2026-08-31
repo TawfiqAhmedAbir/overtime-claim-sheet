@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import BreakScrollPicker from './BreakScrollPicker';
-import ScrollPicker from './ScrollPicker';
-import TimeScrollPicker from './TimeScrollPicker';
+import BreakPicker from './BreakPicker';
+import WheelPicker from './WheelPicker';
+import TimeWheels from './TimeWheels';
 import type { Preferences, Profile, UsualShift, WorkSettings } from '../types';
 import { JOB_TITLES, SITES } from '../types';
 import {
@@ -103,7 +103,7 @@ export default function Settings({
       <p className="day-picker-selected">
         Weekday overtime = time on site minus break minus this amount.
       </p>
-      <ScrollPicker
+      <WheelPicker
         label="Normal shift"
         options={normalOptions}
         value={normalShiftText}
@@ -117,19 +117,19 @@ export default function Settings({
         These fill in automatically when you add a new entry.
       </p>
 
-      <TimeScrollPicker
+      <TimeWheels
         label="Usual start"
         value={shiftDraft.start}
         onChange={(start) => setShiftDraft({ ...shiftDraft, start })}
       />
 
-      <TimeScrollPicker
+      <TimeWheels
         label="Usual finish"
         value={shiftDraft.finish}
         onChange={(finish) => setShiftDraft({ ...shiftDraft, finish })}
       />
 
-      <BreakScrollPicker
+      <BreakPicker
         value={shiftDraft.break}
         onChange={(breakOption) => setShiftDraft({ ...shiftDraft, break: breakOption })}
       />

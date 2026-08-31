@@ -702,87 +702,181 @@ button:disabled {
     flex-direction: row;
   }
 
-  .time-scroll-picker-row {
+  .time-wheels-row {
     max-width: 20rem;
     margin: 0 auto;
   }
 }
 
-/* V3 scroll pickers */
-.scroll-picker-column {
+/* V4 wheel pickers */
+.wheel-picker {
   flex: 1;
   min-width: 0;
 }
 
-.scroll-picker-label {
+.wheel-picker-label {
   display: block;
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--color-text-muted);
   text-align: center;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.35rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.scroll-picker-hint {
-  margin: 0 0 0.35rem;
-  font-size: 0.82rem;
-  color: var(--color-text-muted);
-  text-align: center;
-}
-
-.scroll-picker-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  max-height: 11rem;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
-  padding: 0.35rem;
+.wheel-picker-frame {
+  position: relative;
+  height: 160px;
+  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 0.85rem;
   background: #fff;
-  -webkit-overflow-scrolling: touch;
 }
 
-.scroll-picker-item {
+.wheel-picker-frame::before,
+.wheel-picker-frame::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 58px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.wheel-picker-frame::before {
+  top: 0;
+  background: linear-gradient(to bottom, #fff 20%, rgba(255, 255, 255, 0));
+}
+
+.wheel-picker-frame::after {
+  bottom: 0;
+  background: linear-gradient(to top, #fff 20%, rgba(255, 255, 255, 0));
+}
+
+.wheel-picker-highlight {
+  position: absolute;
+  top: 50%;
+  left: 0.5rem;
+  right: 0.5rem;
+  height: 44px;
+  margin-top: -22px;
+  border-radius: 0.55rem;
+  background: rgba(13, 148, 136, 0.1);
+  border: 1px solid rgba(13, 148, 136, 0.2);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.wheel-picker-window {
+  height: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  padding: 58px 0;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.wheel-picker-window::-webkit-scrollbar {
+  display: none;
+}
+
+.wheel-picker-item {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   scroll-snap-align: center;
-  border: none;
-  background: transparent;
-  border-radius: 0.65rem;
-  padding: 0.7rem 0.5rem;
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--color-text-muted);
 }
 
-.scroll-picker-item.active {
-  background: var(--color-primary);
-  color: #fff;
+.wheel-picker-item.is-selected {
+  color: var(--color-primary-dark);
+  font-weight: 700;
 }
 
-.time-scroll-picker,
-.break-scroll-picker,
+.time-wheels,
+.time-step-picker,
+.break-picker,
 .overtime-scroll-picker {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
-.time-scroll-picker-row {
+.time-wheels-row {
   display: flex;
   align-items: flex-end;
   gap: 0.35rem;
 }
 
-.time-scroll-picker-sep {
+.time-wheels-sep {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-primary-dark);
-  padding-bottom: 1.5rem;
+  padding-bottom: 4.5rem;
+  flex-shrink: 0;
 }
 
-.time-scroll-picker-value {
+.time-step {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.time-step-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+.time-step-next {
+  width: 100%;
+}
+
+.time-step-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.85rem;
+  background: #ecfdf5;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.time-step-summary-label {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.time-step-summary-value {
+  flex: 1;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+.time-step-summary-check {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.break-picker-chips {
+  flex-wrap: wrap;
+}
+
+.break-picker-custom {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.break-picker-custom-value {
   margin: 0;
   font-size: 0.92rem;
   color: var(--color-text-muted);
@@ -848,9 +942,8 @@ button:disabled {
   color: var(--color-accent);
 }
 
-html.large-text .scroll-picker-item {
+html.large-text .wheel-picker-item {
   font-size: 1.15rem;
-  padding: 0.85rem 0.5rem;
 }
 
 html.large-text .overtime-result-value {

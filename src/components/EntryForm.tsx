@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import BreakScrollPicker from './BreakScrollPicker';
+import BreakPicker from './BreakPicker';
 import DayPicker from './DayPicker';
 import OvertimeScrollPicker from './OvertimeScrollPicker';
-import TimeScrollPicker from './TimeScrollPicker';
+import TimeStepPicker, { type TimeStep } from './TimeStepPicker';
 import type {
   BreakOption,
   EntryDraft,
@@ -84,6 +84,8 @@ export default function EntryForm({
     entry?.shiftOverridden ? entry.shift : null,
   );
   const [error, setError] = useState('');
+  const [timeStep, setTimeStep] = useState<TimeStep>(entry ? 'finish' : 'start');
+  const [startConfirmed, setStartConfirmed] = useState(Boolean(entry));
 
   const autoFullOvertime = isAutoFullOvertimeDay(selection, day);
 
@@ -219,9 +221,20 @@ export default function EntryForm({
         daysWithEntries={daysWithEntries}
       />
 
-      <TimeScrollPicker label="Start time" value={start} onChange={handleStartChange} />
-      <TimeScrollPicker label="Finish time" value={finish} onChange={handleFinishChange} />
-      <BreakScrollPicker value={breakOption} onChange={handleBreakChange} />
+      <TimeStepPicker
+        start={start}
+        finish={finish}
+        step={timeStep}
+        startConfirmed={startConfirmed}
+        onStepChange={setTimeStep}
+        onStartConfirmed={() => setStartConfirmed(true)}
+        onStartChange={handleStartChange}
+        onFinishChange={handleFinishChange}
+      />
+
+      {startConfirmed ? (
+        <>
+      <BreakPicker value={breakOption} onChange={handleBreakChange} />
 
       <div className="full-ot-toggle">
         <label className="checkbox-field">
@@ -256,6 +269,8 @@ export default function EntryForm({
           />
           Use these times next time
         </label>
+      ) : null}
+        </>
       ) : null}
 
       <div className="form-footer-total">

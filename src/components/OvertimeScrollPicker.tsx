@@ -1,4 +1,4 @@
-import ScrollPicker from './ScrollPicker';
+import WheelPicker from './WheelPicker';
 import {
   allOvertimeOptions,
   formatShiftClaimFromMinutes,
@@ -61,7 +61,7 @@ export default function OvertimeScrollPicker({
         </p>
       ) : null}
 
-      <ScrollPicker
+      <WheelPicker
         label="Overtime hours"
         options={options}
         value={value}

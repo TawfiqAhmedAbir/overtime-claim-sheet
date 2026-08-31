@@ -42,6 +42,35 @@ export function normalizeBreakOption(value: string): BreakOption {
   return '';
 }
 
+
+export const BREAK_QUICK_OPTIONS = ['', '30 min', '1 hour'] as const;
+
+export function isQuickBreakOption(value: string): boolean {
+  return (BREAK_QUICK_OPTIONS as readonly string[]).includes(value);
+}
+
+export const BREAK_HOUR_OPTIONS = ['0', '1', '2'];
+export const BREAK_MINUTE_OPTIONS = ['00', '15', '30', '45'];
+
+export function breakMinutesToParts(minutes: number): { hour: string; minute: string } {
+  const hours = Math.min(2, Math.floor(minutes / 60));
+  const mins = minutes % 60;
+  const minuteStr = String(mins).padStart(2, '0');
+  const snapped = BREAK_MINUTE_OPTIONS.includes(minuteStr)
+    ? minuteStr
+    : BREAK_MINUTE_OPTIONS.reduce((closest, option) => {
+        const diff = Math.abs(Number(option) - mins);
+        const closestDiff = Math.abs(Number(closest) - mins);
+        return diff < closestDiff ? option : closest;
+      }, '00');
+  return { hour: String(hours), minute: snapped };
+}
+
+export function breakPartsToOption(hour: string, minute: string): BreakOption {
+  const total = Number(hour) * 60 + Number(minute);
+  return formatBreakOption(total) as BreakOption;
+}
+
 export function timeToMinutes(time: string): number {
   const [hours, minutes] = time.split(':').map(Number);
   return (hours ?? 0) * 60 + (minutes ?? 0);
@@ -204,8 +233,28 @@ export function normalShiftHoursFromText(text: string): number {
   return parseShiftHours(text);
 }
 
-export const TIME_HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) =>
-  String(hour).padStart(2, '0'),
+export const TIME_HOUR_OPTIONS = Array.from({ length: 17 }, (_, index) =>
+  String(index + 5).padStart(2, '0'),
 );
+
+export function splitTime(value: string): { hour: string; minute: string } {
+  const [hour = '07', minute = '00'] = value.split(':');
+  const snapped = TIME_MINUTE_OPTIONS.includes(minute)
+    ? minute
+    : TIME_MINUTE_OPTIONS.reduce((closest, option) => {
+        const diff = Math.abs(Number(option) - Number(minute));
+        const closestDiff = Math.abs(Number(closest) - Number(minute));
+        return diff < closestDiff ? option : closest;
+      }, '00');
+  const hourPadded = hour.padStart(2, '0');
+  const validHour = TIME_HOUR_OPTIONS.includes(hourPadded)
+    ? hourPadded
+    : TIME_HOUR_OPTIONS[0] ?? '07';
+  return { hour: validHour, minute: snapped };
+}
+
+export function joinTime(hour: string, minute: string): string {
+  return `${hour}:${minute}`;
+}
 
 export const TIME_MINUTE_OPTIONS = ['00', '15', '30', '45'];
