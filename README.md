@@ -42,6 +42,8 @@ Push to **`main`** → GitHub Actions deploys to Pages automatically.
 
 Repo: https://github.com/TawfiqAhmedAbir/overtime-claim-sheet
 
+**V2 highlights:** warm UI, usual shift, same-as-last-time, share/download, undo delete, large text.
+
 ---
 
 ## Project layout

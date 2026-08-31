@@ -26,7 +26,7 @@ The downloaded file must come from the **exact bundled template**:
 
 ---
 
-## Current status (V1 — shipped)
+## Current status (V2 — shipped)
 
 | Area | Status |
 |------|--------|
@@ -38,15 +38,24 @@ The downloaded file must come from the **exact bundled template**:
 | PWA + offline after first visit | Done |
 | GitHub Pages auto-deploy on push to `main` | Done |
 | Excel opens without recovery warning | Fixed (`stripFormulaResults`) |
+| Warm UI (teal/coral palette, StatCard, icons) | Done (V2) |
+| In-app ConfirmSheet (no native dialogs) | Done (V2) |
+| DayPicker with today shortcut | Done (V2) |
+| Remember usual shift | Done (V2) |
+| Same as last time | Done (V2) |
+| Share sheet (Web Share API + download fallback) | Done (V2) |
+| Undo delete (5s toast) | Done (V2) |
+| Large text mode | Done (V2) |
+| First-run “Add to Home Screen” tip | Done (V2) |
 
 ---
 
 ## How the app works (user flow)
 
-1. Open app → current month shown
-2. **+ Add overtime** → date, start, finish, break, hours claimed → **Save**
-3. Entries persist on the device; she can add more anytime
-4. **Download claim sheet** → `Claim Sheet {Month} {Year}.xlsx`
+1. Open app → current month, profile snippet, total hours hero
+2. **+ Add overtime** or **Same as last time** → DayPicker, times, break, hours claimed → **Save**
+3. New entries pre-fill from **usual shift** (Settings → “My usual overtime”)
+4. **Download claim sheet** → share on phone if supported, else download → `Claim Sheet {Month} {Year}.xlsx`
 
 **Business rules:**
 
@@ -104,22 +113,25 @@ Run `npm run test:excel` after any change to `src/lib/excel.ts`.
 ```
 public/template.xlsx     ← exact Synnovis template (never generate from scratch)
 src/
-  App.tsx                ← screens: home, add, edit, settings
-  components/            ← EntryForm, EntryList, MonthPicker, Settings, DownloadModal
+  App.tsx                ← screens, toasts, confirm sheets, share/download
+  components/
+    ConfirmSheet.tsx     ← in-app confirm/alert (replaces window.confirm)
+    DayPicker.tsx        ← day chips + today + month grid
+    StatCard.tsx         ← month total hero
+    EntryForm, EntryList, MonthPicker, Settings, DownloadModal, Icons
   lib/
-    excel.ts             ← template load, fill, download
-    storage.ts           ← localStorage (profile + entries by month key)
-    hours.ts             ← parse/format shift text ("5 hour 30 min" → 5.5)
-    dates.ts             ← row mapping, month helpers, UTC dates
-  types.ts
-.github/workflows/deploy.yml  ← GitHub Pages
+    excel.ts             ← template load, fill, shareOrDownloadClaimSheet
+    storage.ts           ← profile, entries, usualShift, preferences
+    hours.ts, dates.ts
+  types.ts               ← Profile, UsualShift, Preferences, OvertimeEntry
+.github/workflows/deploy.yml
 ```
 
 **Stack:** React 19, Vite 7, TypeScript, ExcelJS, vite-plugin-pWA
 
 **Storage key:** `overtime-sheet-v1` in localStorage
 
-**Month key format:** `YYYY-MM` (e.g. `2026-08`)
+**Stored fields:** `profile`, `entries` (by month key), `usualShift`, `preferences` (`largeText`, `rememberUsualShift`, `dismissedTips`)
 
 ---
 
@@ -137,7 +149,7 @@ npm run test:excel   # golden test — must pass after excel.ts changes
 
 ## Deployment
 
-**Shipped:** 31 Aug 2026 — V1 live on GitHub Pages; auto-deploy verified.
+**Shipped:** V1 Aug 2026, V2 UI/UX Aug 2026 — live on GitHub Pages.
 
 Push to **`main`** → GitHub Actions (`.github/workflows/deploy.yml`) builds with `npm ci && npm run build` and deploys `dist/` to Pages.
 
@@ -154,17 +166,25 @@ Push to **`main`** → GitHub Actions (`.github/workflows/deploy.yml`) builds wi
 
 ---
 
-## V2 backlog (not built yet)
+## V3 backlog (not built yet)
 
 Prioritise only when user asks:
 
-1. **Same as last time** — duplicate previous entry, change date
-2. **Undo delete**
-3. **Share sheet** after download (mobile share API)
-4. **Remember usual shift** — default start/finish/break
-5. **Month-end reminder**
-6. **Large text mode**
-7. **Export/backup** entries for new phone
+1. **Month-end reminder** — needs notification permission strategy
+2. **Export/backup** entries for new phone (JSON import/export UI)
+3. **Calendar month grid** as default day picker (optional UX tweak)
+4. **Code-split ExcelJS** — reduce main bundle size (~1.1 MB)
+
+---
+
+## V2 backlog (shipped Aug 2026)
+
+1. ~~Same as last time~~
+2. ~~Undo delete~~
+3. ~~Share sheet after download~~
+4. ~~Remember usual shift~~
+5. ~~Large text mode~~
+6. ~~Warm UI + ConfirmSheet + DayPicker~~
 
 ---
 

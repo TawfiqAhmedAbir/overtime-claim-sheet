@@ -116,14 +116,44 @@ export async function downloadClaimSheet(
   entries: OvertimeEntry[],
 ): Promise<void> {
   const blob = await generateClaimSheet(selection, profile, entries);
+  triggerDownload(blob, downloadFileName(selection));
+}
+
+function triggerDownload(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = downloadFileName(selection);
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function shareOrDownloadClaimSheet(
+  selection: MonthSelection,
+  profile: Profile,
+  entries: OvertimeEntry[],
+  mode: 'share' | 'download' = 'download',
+): Promise<'shared' | 'downloaded'> {
+  const blob = await generateClaimSheet(selection, profile, entries);
+  const fileName = downloadFileName(selection);
+  const file = new File([blob], fileName, { type: blob.type });
+
+  if (
+    mode === 'share' &&
+    typeof navigator !== 'undefined' &&
+    navigator.canShare?.({ files: [file] })
+  ) {
+    await navigator.share({
+      files: [file],
+      title: fileName,
+    });
+    return 'shared';
+  }
+
+  triggerDownload(blob, fileName);
+  return 'downloaded';
 }
 
 export { downloadFileName, loadTemplate };

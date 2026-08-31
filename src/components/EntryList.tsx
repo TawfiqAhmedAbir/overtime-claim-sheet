@@ -1,9 +1,11 @@
 import type { MonthSelection, OvertimeEntry } from '../types';
 import {
   breakLabel,
+  dayOfWeekIndex,
   formatEntryDate,
   formatTimeLabel,
 } from '../lib/dates';
+import { ClipboardIcon } from './Icons';
 
 interface EntryListProps {
   selection: MonthSelection;
@@ -21,6 +23,9 @@ export default function EntryList({
   if (entries.length === 0) {
     return (
       <div className="empty-state panel">
+        <div className="empty-state-icon">
+          <ClipboardIcon />
+        </div>
         <strong>No overtime saved yet</strong>
         <p>Tap “Add overtime” when you work extra hours this month.</p>
       </div>
@@ -30,7 +35,11 @@ export default function EntryList({
   return (
     <div className="entry-list">
       {entries.map((entry) => (
-        <article className="entry-card" key={entry.id}>
+        <article
+          className="entry-card"
+          key={entry.id}
+          data-dow={dayOfWeekIndex(selection, entry.day)}
+        >
           <div className="entry-card-header">
             <div>
               <h3>{formatEntryDate(selection, entry.day)}</h3>
@@ -44,14 +53,14 @@ export default function EntryList({
             <div className="entry-actions">
               <button
                 type="button"
-                className="text-button"
+                className="entry-action-btn"
                 onClick={() => onEdit(entry)}
               >
                 Edit
               </button>
               <button
                 type="button"
-                className="text-button"
+                className="entry-action-btn danger"
                 onClick={() => onDelete(entry)}
               >
                 Delete

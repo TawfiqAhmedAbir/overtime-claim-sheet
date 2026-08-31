@@ -20,6 +20,19 @@ export interface MonthSelection {
   month: number;
 }
 
+export interface UsualShift {
+  start: string;
+  finish: string;
+  break: BreakOption;
+  shift: string;
+}
+
+export interface Preferences {
+  largeText: boolean;
+  dismissedTips: string[];
+  rememberUsualShift: boolean;
+}
+
 export const JOB_TITLES = [
   'Adult Phlebotomist',
   'Paediatric Phlebotomist',
@@ -40,3 +53,18 @@ export const DEFAULT_PROFILE: Profile = {
   jobTitle: 'Adult Phlebotomist',
   site: 'DH',
 };
+
+export const DEFAULT_USUAL_SHIFT: UsualShift = {
+  start: '07:00',
+  finish: '17:30',
+  break: '1 hour',
+  shift: '5 hour 30 min',
+};
+
+export const DEFAULT_PREFERENCES: Preferences = {
+  largeText: false,
+  dismissedTips: [],
+  rememberUsualShift: true,
+};
+
+export type EntryDraft = Omit<OvertimeEntry, 'id'>;

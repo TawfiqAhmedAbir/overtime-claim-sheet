@@ -105,3 +105,36 @@ export function recentMonthOptions(count = 6): MonthSelection[] {
 
   return options;
 }
+
+export function isCurrentMonth(selection: MonthSelection): boolean {
+  const now = currentMonth();
+  return selection.year === now.year && selection.month === now.month;
+}
+
+export function todayDayInMonth(selection: MonthSelection): number | undefined {
+  if (!isCurrentMonth(selection)) return undefined;
+  return new Date().getDate();
+}
+
+export function defaultDayForMonth(selection: MonthSelection): number {
+  return todayDayInMonth(selection) ?? 1;
+}
+
+export function addMonths(
+  selection: MonthSelection,
+  delta: number,
+): MonthSelection {
+  const date = new Date(selection.year, selection.month - 1 + delta, 1);
+  return { year: date.getFullYear(), month: date.getMonth() + 1 };
+}
+
+export function dayOfWeekIndex(selection: MonthSelection, day: number): number {
+  return new Date(selection.year, selection.month - 1, day).getDay();
+}
+
+export function monthKeysEqual(
+  a: MonthSelection,
+  b: MonthSelection,
+): boolean {
+  return a.year === b.year && a.month === b.month;
+}

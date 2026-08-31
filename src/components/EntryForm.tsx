@@ -1,40 +1,102 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import DayPicker from './DayPicker';
 import type {
   BreakOption,
+  EntryDraft,
   MonthSelection,
   OvertimeEntry,
+  UsualShift,
 } from '../types';
 import { SHIFT_PRESETS } from '../types';
-import { daysInMonth, formatEntryDate } from '../lib/dates';
-import { findEntryByDay, createEntryId } from '../lib/storage';
+import { defaultDayForMonth } from '../lib/dates';
+import { formatTotalHours, sumShiftHours } from '../lib/hours';
+import { findEntryByDay, loadEntries, createEntryId } from '../lib/storage';
 
 interface EntryFormProps {
   selection: MonthSelection;
   entry?: OvertimeEntry;
-  onSave: (entry: OvertimeEntry) => void;
+  initialDraft?: Partial<EntryDraft>;
+  usualShift: UsualShift;
+  rememberUsualShift: boolean;
+  onRememberUsualShiftChange: (value: boolean) => void;
+  monthTotalHours: number;
+  onSave: (entry: OvertimeEntry, updateUsual: boolean) => void;
   onCancel: () => void;
+  onDuplicateDay: (
+    day: number,
+    onReplace: () => void,
+  ) => void;
 }
 
 export default function EntryForm({
   selection,
   entry,
+  initialDraft,
+  usualShift,
+  rememberUsualShift,
+  onRememberUsualShiftChange,
+  monthTotalHours,
   onSave,
   onCancel,
+  onDuplicateDay,
 }: EntryFormProps) {
-  const dayCount = daysInMonth(selection);
-  const [day, setDay] = useState(entry?.day ?? 1);
-  const [start, setStart] = useState(entry?.start ?? '07:00');
-  const [finish, setFinish] = useState(entry?.finish ?? '17:30');
-  const [breakOption, setBreakOption] = useState<BreakOption>(
-    entry?.break ?? '1 hour',
-  );
-  const [shift, setShift] = useState(entry?.shift ?? '5 hour 30 min');
+  const defaults = entry
+    ? {
+        day: entry.day,
+        start: entry.start,
+        finish: entry.finish,
+        break: entry.break,
+        shift: entry.shift,
+      }
+    : {
+        day: initialDraft?.day ?? defaultDayForMonth(selection),
+        start: initialDraft?.start ?? usualShift.start,
+        finish: initialDraft?.finish ?? usualShift.finish,
+        break: initialDraft?.break ?? usualShift.break,
+        shift: initialDraft?.shift ?? usualShift.shift,
+      };
+
+  const [day, setDay] = useState(defaults.day);
+  const [start, setStart] = useState(defaults.start);
+  const [finish, setFinish] = useState(defaults.finish);
+  const [breakOption, setBreakOption] = useState<BreakOption>(defaults.break);
+  const [shift, setShift] = useState(defaults.shift);
   const [error, setError] = useState('');
 
-  const dayOptions = useMemo(
-    () => Array.from({ length: dayCount }, (_, index) => index + 1),
-    [dayCount],
-  );
+  const daysWithEntries = useMemo(() => {
+    const currentId = entry?.id;
+    return loadEntries(selection)
+      .filter((item) => item.id !== currentId)
+      .map((item) => item.day);
+  }, [selection, entry?.id]);
+
+  const projectedTotal = useMemo(() => {
+    const others = loadEntries(selection).filter((item) => item.id !== entry?.id);
+    const withoutDay = others.filter((item) => item.day !== day);
+    return sumShiftHours([...withoutDay.map((item) => item.shift), shift]);
+  }, [selection, entry?.id, day, shift]);
+
+  useEffect(() => {
+    if (entry) return;
+    setDay(initialDraft?.day ?? defaultDayForMonth(selection));
+  }, [selection, entry, initialDraft?.day]);
+
+  function submitEntry() {
+    const existing = findEntryByDay(selection, day);
+    const payload: OvertimeEntry = {
+      id:
+        existing && existing.id !== entry?.id
+          ? existing.id
+          : entry?.id ?? createEntryId(),
+      day,
+      start,
+      finish,
+      break: breakOption,
+      shift: shift.trim(),
+    };
+
+    onSave(payload, rememberUsualShift && !entry);
+  }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -52,41 +114,21 @@ export default function EntryForm({
 
     const existing = findEntryByDay(selection, day);
     if (existing && existing.id !== entry?.id) {
-      const confirmed = window.confirm(
-        `You already saved overtime for day ${day}. Replace it with this entry?`,
-      );
-      if (!confirmed) return;
+      onDuplicateDay(day, submitEntry);
+      return;
     }
 
-    onSave({
-      id:
-        existing && existing.id !== entry?.id
-          ? existing.id
-          : entry?.id ?? createEntryId(),
-      day,
-      start,
-      finish,
-      break: breakOption,
-      shift: shift.trim(),
-    });
+    submitEntry();
   }
 
   return (
     <form className="panel form-grid" onSubmit={handleSubmit}>
-      <div className="field">
-        <label htmlFor="day">Date</label>
-        <select
-          id="day"
-          value={day}
-          onChange={(event) => setDay(Number(event.target.value))}
-        >
-          {dayOptions.map((option) => (
-            <option key={option} value={option}>
-              {formatEntryDate(selection, option)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <DayPicker
+        selection={selection}
+        value={day}
+        onChange={setDay}
+        daysWithEntries={daysWithEntries}
+      />
 
       <div className="field">
         <label htmlFor="start">Start time</label>
@@ -146,7 +188,25 @@ export default function EntryForm({
         />
       </div>
 
-      {error ? <div className="inline-note">{error}</div> : null}
+      {!entry ? (
+        <label className="checkbox-field">
+          <input
+            type="checkbox"
+            checked={rememberUsualShift}
+            onChange={(event) => onRememberUsualShiftChange(event.target.checked)}
+          />
+          Use these times next time
+        </label>
+      ) : null}
+
+      <div className="form-footer-total">
+        Month total after save: <strong>{formatTotalHours(projectedTotal)}</strong>
+        {!entry && monthTotalHours > 0 ? (
+          <> (currently {formatTotalHours(monthTotalHours)})</>
+        ) : null}
+      </div>
+
+      {error ? <div className="inline-note error">{error}</div> : null}
 
       <div className="form-actions">
         <button type="submit" className="primary-button">

@@ -11,14 +11,15 @@ This repo is a **mobile PWA** for logging phlebotomy overtime and downloading th
 
 **Repo:** https://github.com/TawfiqAhmedAbir/overtime-claim-sheet (`main` → auto-deploy to Pages)
 
-**Full context:** [AGENTS.md](../../AGENTS.md) — status, cell map, architecture, V2 backlog, next steps. **V1 shipped** (Aug 2026).
+**Full context:** [AGENTS.md](../../AGENTS.md) — status, cell map, architecture, V3 backlog, next steps. **V2 shipped** (Aug 2026).
 
 ## Quick rules for agents
 
-1. Excel output must load `public/template.xlsx`, fill mapped cells only, then download.
+1. Excel output must load `public/template.xlsx`, fill mapped cells only, then download/share.
 2. After any `src/lib/excel.ts` change: run `npm run test:excel` and verify no Excel recovery warning.
 3. Keep `stripFormulaResults()` before save — prevents ExcelJS writing invalid `NaN` cached values.
 4. Shift column (D) = user-entered claimed hours text, not calculated from times.
 5. Row for day N: `N + 14`. Month anchor: cell **H7** (UTC noon, 1st of month).
-6. User prefers **plan first, wait for "Go"** before implementing non-trivial changes.
-7. **Do not git commit** unless the user explicitly asks.
+6. Use `ConfirmSheet` for confirms — no `window.confirm` / `window.alert`.
+7. User prefers **plan first, wait for "Go"** before implementing non-trivial changes.
+8. **Do not git commit** unless the user explicitly asks.
