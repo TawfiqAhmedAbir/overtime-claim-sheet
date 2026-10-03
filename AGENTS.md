@@ -46,17 +46,20 @@ The downloaded file must come from the **exact bundled template**:
 | **Full form on one screen (no wizard)** | Done (V6) |
 | **Break: 3 chips + Other dropdown** | Done (V6) |
 | **Overtime override via dropdown** | Done (V6) |
+| First-run setup (name, job, site, normal shift) | Done — new phones only; existing saved data skips it |
+| Android “Add to home screen” | Done — button on first visit, then one line until opened from the icon |
 
 ---
 
 ## How the app works (user flow)
 
-1. Open app → current month, profile snippet, total hours hero
-2. **+ Add overtime** or **Same as last time** → **all fields visible at once** on one screen
-3. Tap **Start time** / **Finish time** → phone’s native time picker (Android: clock dial; iPhone: scroll wheels)
-4. **Break:** tap **No break** / **30 min** / **1 hour**, or **Other…** → dropdown (15 min, 45 min, 1 hr 30, 2 hr)
-5. App **calculates overtime** and shows it — change via **dropdown** only if wrong (no free typing)
-6. **Send claim sheet** (share icon on phone when supported) → **Share…** opens the **system share sheet** (whatever apps the phone offers), or **Save to this phone** → `Claim Sheet {Month} {Year}.xlsx`
+1. First open on a new phone → enter name, job, site, and normal shift. That is saved on the phone. A phone that already has saved data skips this. On Android, **Add to home screen** opens the install box; if they skip it, one line stays at the top until the app is opened from the icon. iPhone has no install guidance.
+2. Open app → current month, profile snippet, total hours hero
+3. **+ Add overtime** or **Same as last time** → **all fields visible at once** on one screen
+4. Tap **Start time** / **Finish time** → phone’s native time picker (Android: clock dial; iPhone: scroll wheels)
+5. **Break:** tap **No break** / **30 min** / **1 hour**, or **Other…** → dropdown (15 min, 45 min, 1 hr 30, 2 hr)
+6. App **calculates overtime** and shows it — change via **dropdown** only if wrong (no free typing)
+7. **Send claim sheet** (share icon on phone when supported) → **Share…** opens the **system share sheet** (whatever apps the phone offers), or **Save to this phone** → `Claim Sheet {Month} {Year}.xlsx`
 
 **Business rules:**
 
@@ -136,6 +139,7 @@ src/
     TimeField.tsx        ← native type="time" (start/finish)
     BreakPicker.tsx      ← 3 chips + Other select
     OvertimeField.tsx    ← auto calc hero + breakdown + override select
+    SetupScreen.tsx      ← first open on a new phone
     DayPicker, EntryForm, EntryList, Settings, DownloadModal, ConfirmSheet, StatCard
   lib/
     hours.ts             ← calculateOvertime, formatShiftClaimFromMinutes, break options

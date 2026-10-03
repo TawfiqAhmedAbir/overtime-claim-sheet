@@ -26,3 +26,4 @@ This repo is a **mobile PWA** for logging phlebotomy overtime and downloading th
 9. Use `ConfirmSheet` for confirms — no `window.confirm` / `window.alert`.
 10. User prefers **plan first, wait for "Go"** before implementing non-trivial changes.
 11. **Do not git commit** unless the user explicitly asks.
+12. New phones get a setup screen (name, job, site, normal shift). Existing saved data skips it. Home-screen install guidance is **Android only**.

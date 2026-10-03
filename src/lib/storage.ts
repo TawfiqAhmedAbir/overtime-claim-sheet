@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import {
   DEFAULT_PREFERENCES,
+  DEFAULT_PROFILE,
   DEFAULT_USUAL_SHIFT,
   DEFAULT_WORK_SETTINGS,
 } from '../types';
@@ -37,11 +38,7 @@ function normalizeUsualShift(raw?: StoredUsualShift): UsualShift {
 
 function emptyData(profile?: Profile): StoredData {
   return {
-    profile: profile ?? {
-      name: 'Qaiser Nazneen',
-      jobTitle: 'Adult Phlebotomist',
-      site: 'DH',
-    },
+    profile: profile ?? { ...DEFAULT_PROFILE },
     entries: {},
     usualShift: DEFAULT_USUAL_SHIFT,
     workSettings: DEFAULT_WORK_SETTINGS,
@@ -81,6 +78,30 @@ function readStorage(): StoredData {
 
 function writeStorage(data: StoredData): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+export function hasCompletedSetup(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function completeSetup(profile: Profile, normalShiftHours: number): void {
+  writeStorage({
+    ...emptyData({
+      name: profile.name.trim(),
+      jobTitle: profile.jobTitle,
+      site: profile.site,
+    }),
+    workSettings: {
+      ...DEFAULT_WORK_SETTINGS,
+      normalShiftHours: Number.isFinite(normalShiftHours)
+        ? normalShiftHours
+        : DEFAULT_WORK_SETTINGS.normalShiftHours,
+    },
+  });
 }
 
 export function loadProfile(): Profile {

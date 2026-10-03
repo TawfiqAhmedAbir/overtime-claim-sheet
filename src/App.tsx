@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import CoachTipBanner from './components/CoachTipBanner';
 import ConfirmSheet from './components/ConfirmSheet';
 import DownloadModal from './components/DownloadModal';
+import SetupScreen from './components/SetupScreen';
 import EntryForm from './components/EntryForm';
 import EntryList from './components/EntryList';
 import MonthPicker from './components/MonthPicker';
@@ -22,6 +23,7 @@ import {
   monthKeysEqual,
   todayDayInMonth,
 } from './lib/dates';
+import { useAndroidInstall } from './hooks/useAndroidInstall';
 import { useHorizontalSwipe } from './hooks/useHorizontalSwipe';
 import { lightHaptic } from './lib/haptics';
 import { shareOrDownloadClaimSheet } from './lib/excel';
@@ -32,6 +34,8 @@ import {
   dismissTip,
   findEntryByDay,
   getMostRecentEntry,
+  completeSetup,
+  hasCompletedSetup,
   loadEntries,
   loadPreferences,
   loadProfile,
@@ -45,6 +49,7 @@ import {
   upsertEntry,
 } from './lib/storage';
 import type { EntryDraft, MonthSelection, OvertimeEntry, Profile } from './types';
+import { DEFAULT_WORK_SETTINGS } from './types';
 
 type Screen = 'home' | 'add' | 'edit' | 'settings';
 
@@ -82,6 +87,8 @@ interface ToastState {
 }
 
 export default function App() {
+  const install = useAndroidInstall();
+  const [setupComplete, setSetupComplete] = useState(hasCompletedSetup);
   const [selection, setSelection] = useState<MonthSelection>(currentMonth());
   const [profile, setProfile] = useState<Profile>(() => loadProfile());
   const [usualShift, setUsualShift] = useState(() => loadUsualShift());
@@ -326,6 +333,27 @@ export default function App() {
     setScreen('add');
   }
 
+  if (!setupComplete) {
+    return (
+      <SetupScreen
+        showInstall={install.showGuidance}
+        onInstall={() => {
+          void install.promptInstall();
+        }}
+        onComplete={(nextProfile, normalShiftHours) => {
+          completeSetup(nextProfile, normalShiftHours);
+          setProfile(nextProfile);
+          setWorkSettings({
+            ...DEFAULT_WORK_SETTINGS,
+            ...workSettings,
+            normalShiftHours,
+          });
+          setSetupComplete(true);
+        }}
+      />
+    );
+  }
+
   return (
     <div
       className={
@@ -384,6 +412,18 @@ export default function App() {
           </button>
         )}
       </header>
+
+      {install.showGuidance ? (
+        <button
+          type="button"
+          className="install-banner"
+          onClick={() => {
+            void install.promptInstall();
+          }}
+        >
+          Add to home screen
+        </button>
+      ) : null}
 
       {screen === 'home' ? (
         <>
