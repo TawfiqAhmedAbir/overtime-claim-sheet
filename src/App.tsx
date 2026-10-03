@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import CoachTipBanner from './components/CoachTipBanner';
 import ConfirmSheet from './components/ConfirmSheet';
 import DownloadModal from './components/DownloadModal';
 import EntryForm from './components/EntryForm';
@@ -18,12 +19,16 @@ import {
   formatEntryDate,
   formatMonthLabel,
   monthKeysEqual,
+  todayDayInMonth,
 } from './lib/dates';
 import { useHorizontalSwipe } from './hooks/useHorizontalSwipe';
+import { lightHaptic } from './lib/haptics';
 import { shareOrDownloadClaimSheet } from './lib/excel';
 import { sumShiftHours } from './lib/hours';
 import {
   deleteEntry,
+  dismissTip,
+  findEntryByDay,
   getMostRecentEntry,
   loadEntries,
   loadPreferences,
@@ -40,6 +45,21 @@ import {
 import type { EntryDraft, MonthSelection, OvertimeEntry, Profile } from './types';
 
 type Screen = 'home' | 'add' | 'edit' | 'settings';
+
+const COACH_TIPS = [
+  {
+    id: 'swipe-month',
+    message: 'Swipe the month card left or right to change month.',
+  },
+  {
+    id: 'swipe-delete',
+    message: 'Swipe an entry left to reveal Delete.',
+  },
+  {
+    id: 'download',
+    message: 'Tap the download icon at the top to get your claim sheet.',
+  },
+] as const;
 
 interface ConfirmState {
   title: string;
@@ -109,6 +129,7 @@ export default function App() {
   }
 
   function handleSaveEntry(entry: OvertimeEntry, updateUsual: boolean) {
+    lightHaptic();
     const next = upsertEntry(selection, entry);
     setEntries(next);
 
@@ -160,6 +181,7 @@ export default function App() {
       variant: 'danger',
       onConfirm: () => {
         setConfirm(null);
+        lightHaptic();
         const reduceMotion = window.matchMedia(
           '(prefers-reduced-motion: reduce)',
         ).matches;
@@ -245,6 +267,30 @@ export default function App() {
     () => handleMonthChange(addMonths(selection, -1)),
   );
 
+  function reloadFromStorage() {
+    const month = selection;
+    setProfile(loadProfile());
+    setUsualShift(loadUsualShift());
+    setWorkSettings(loadWorkSettings());
+    setPreferences(loadPreferences());
+    setEntries(loadEntries(month));
+  }
+
+  const activeCoachTip = COACH_TIPS.find(
+    (tip) => !preferences.dismissedTips.includes(tip.id),
+  );
+
+  const todayDay = todayDayInMonth(selection);
+  const showLogToday =
+    screen === 'home' &&
+    todayDay !== undefined &&
+    !findEntryByDay(selection, todayDay);
+
+  function handleLogToday() {
+    setAddDraft({ day: todayDay });
+    setScreen('add');
+  }
+
   function handleSameAsLastTime() {
     const last = getMostRecentEntry(selection);
     if (!last) return;
@@ -261,7 +307,15 @@ export default function App() {
   }
 
   return (
-    <div className={screen === 'home' ? 'app-shell app-shell--home' : 'app-shell'}>
+    <div
+      className={
+        screen === 'home'
+          ? 'app-shell app-shell--home'
+          : screen === 'add' || screen === 'edit'
+            ? 'app-shell app-shell--form'
+            : 'app-shell'
+      }
+    >
       <header className="top-bar">
         <div className="brand">
           <h1>Overtime Claim</h1>
@@ -309,7 +363,27 @@ export default function App() {
 
       {screen === 'home' ? (
         <>
-          <StatCard totalHours={totalHours} entryCount={entries.length} />
+          <StatCard
+            totalHours={totalHours}
+            entryCount={entries.length}
+            ringGoalHours={workSettings.monthRingGoalHours}
+          />
+
+          {activeCoachTip ? (
+            <CoachTipBanner
+              message={activeCoachTip.message}
+              onDismiss={() => {
+                dismissTip(activeCoachTip.id);
+                setPreferences(loadPreferences());
+              }}
+            />
+          ) : null}
+
+          {showLogToday ? (
+            <button type="button" className="log-today-banner" onClick={handleLogToday}>
+              Log overtime for today
+            </button>
+          ) : null}
 
           <section
             className="summary-card summary-card--swipe"
@@ -419,6 +493,10 @@ export default function App() {
             savePreferences(nextPreferences);
             setPreferences(nextPreferences);
           }}
+          onImportComplete={() => {
+            reloadFromStorage();
+            setToast({ message: 'Backup restored' });
+          }}
           onClose={() => setScreen('home')}
         />
       ) : null}
@@ -466,7 +544,14 @@ export default function App() {
       ) : null}
 
       {toast ? (
-        <div className="toast" role="status">
+        <div
+          className={
+            toast.actionLabel
+              ? 'toast toast--snackbar'
+              : 'toast toast--snackbar toast--info'
+          }
+          role="status"
+        >
           <span>{toast.message}</span>
           {toast.actionLabel && toast.onAction ? (
             <button

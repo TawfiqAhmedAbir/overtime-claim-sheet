@@ -32,6 +32,7 @@ export interface UsualShift {
 
 export interface WorkSettings {
   normalShiftHours: number;
+  monthRingGoalHours: number;
 }
 
 export interface Preferences {
@@ -63,6 +64,7 @@ export const DEFAULT_USUAL_SHIFT: UsualShift = {
 
 export const DEFAULT_WORK_SETTINGS: WorkSettings = {
   normalShiftHours: 4,
+  monthRingGoalHours: 40,
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {

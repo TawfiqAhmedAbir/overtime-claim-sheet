@@ -5,9 +5,8 @@ import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 interface StatCardProps {
   totalHours: number;
   entryCount: number;
+  ringGoalHours: number;
 }
-
-const MONTH_RING_GOAL_HOURS = 40;
 const RING_SIZE = 76;
 const STROKE = 7;
 const RADIUS = (RING_SIZE - STROKE) / 2;
@@ -47,11 +46,16 @@ function useAnimatedHours(target: number, reduce: boolean) {
   return reduce ? target : value;
 }
 
-export default function StatCard({ totalHours, entryCount }: StatCardProps) {
+export default function StatCard({
+  totalHours,
+  entryCount,
+  ringGoalHours,
+}: StatCardProps) {
   const reduceMotion = usePrefersReducedMotion();
   const animated = useAnimatedHours(totalHours, reduceMotion);
   const shown = Math.abs(animated - totalHours) < 0.02 ? totalHours : animated;
-  const progress = Math.min(shown / MONTH_RING_GOAL_HOURS, 1);
+  const goal = ringGoalHours > 0 ? ringGoalHours : 40;
+  const progress = Math.min(shown / goal, 1);
   const dashOffset = CIRCUMFERENCE * (1 - progress);
 
   return (

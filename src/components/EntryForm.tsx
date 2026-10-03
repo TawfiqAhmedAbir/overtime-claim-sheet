@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import BreakPicker from './BreakPicker';
 import DayPicker from './DayPicker';
 import OvertimeField from './OvertimeField';
@@ -13,6 +13,7 @@ import type {
 } from '../types';
 import {
   defaultDayForMonth,
+  formatTimeLabel,
   isAutoFullOvertimeDay,
   isBankHoliday,
   isWeekend,
@@ -84,6 +85,8 @@ export default function EntryForm({
     entry?.shiftOverridden ? entry.shift : null,
   );
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLDivElement>(null);
+  const startFieldRef = useRef<HTMLDivElement>(null);
 
   const autoFullOvertime = isAutoFullOvertimeDay(selection, day);
 
@@ -119,10 +122,18 @@ export default function EntryForm({
     return sumShiftHours([...withoutDay.map((item) => item.shift), shift]);
   }, [selection, entry?.id, day, shift]);
 
+  const usualTimesLabel = `${formatTimeLabel(usualShift.start)} – ${formatTimeLabel(usualShift.finish)}`;
+
   useEffect(() => {
     if (entry) return;
     setDay(initialDraft?.day ?? defaultDayForMonth(selection));
   }, [selection, entry, initialDraft?.day]);
+
+  useEffect(() => {
+    if (!error) return;
+    const target = errorRef.current ?? startFieldRef.current;
+    target?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [error]);
 
   function handleDayChange(newDay: number) {
     setDay(newDay);
@@ -150,6 +161,14 @@ export default function EntryForm({
   function handleFullOvertimeChange(checked: boolean) {
     setFullOvertime(checked);
     setShiftOverride(null);
+  }
+
+  function applyUsualTimes() {
+    setStart(usualShift.start);
+    setFinish(usualShift.finish);
+    setBreakOption(normalizeBreakOption(usualShift.break));
+    setShiftOverride(null);
+    setError('');
   }
 
   function dayTypeHint(): string | null {
@@ -181,15 +200,15 @@ export default function EntryForm({
     event.preventDefault();
     setError('');
 
+    if (!start || !finish) {
+      setError('Please choose a start and finish time.');
+      return;
+    }
+
     if (calculated.minutes <= 0 && !shiftOverridden) {
       setError(
         'No overtime hours calculated. Check your times or turn on “Whole shift is overtime”.',
       );
-      return;
-    }
-
-    if (!start || !finish) {
-      setError('Please choose a start and finish time.');
       return;
     }
 
@@ -211,81 +230,103 @@ export default function EntryForm({
   }
 
   return (
-    <form className="panel form-grid" onSubmit={handleSubmit}>
-      <DayPicker
-        selection={selection}
-        value={day}
-        onChange={handleDayChange}
-        daysWithEntries={daysWithEntries}
-      />
+    <>
+      <form
+        id="entry-form"
+        className="panel form-grid form-scroll"
+        onSubmit={handleSubmit}
+      >
+        <DayPicker
+          selection={selection}
+          value={day}
+          onChange={handleDayChange}
+          daysWithEntries={daysWithEntries}
+        />
 
-      <TimeField
-        id="start"
-        label="Start time"
-        value={start}
-        onChange={handleStartChange}
-      />
-      <TimeField
-        id="finish"
-        label="Finish time"
-        value={finish}
-        onChange={handleFinishChange}
-      />
-
-      <BreakPicker value={breakOption} onChange={handleBreakChange} />
-
-      <div className="full-ot-toggle">
-        <label className="checkbox-field">
-          <input
-            type="checkbox"
-            checked={fullOvertime}
-            onChange={(event) => handleFullOvertimeChange(event.target.checked)}
+        <div ref={startFieldRef}>
+          <TimeField
+            id="start"
+            label="Start time"
+            value={start}
+            onChange={handleStartChange}
           />
-          Whole shift is overtime (weekend / bank holiday)
-        </label>
-        {autoFullOvertime ? (
-          <p className="day-picker-selected">{dayTypeHint()}</p>
-        ) : null}
-      </div>
+        </div>
+        <TimeField
+          id="finish"
+          label="Finish time"
+          value={finish}
+          onChange={handleFinishChange}
+        />
 
-      <OvertimeField
-        value={shift}
-        calculatedValue={calculated.text}
-        overridden={shiftOverridden}
-        onSiteMinutes={calculated.onSiteMinutes}
-        normalShiftHours={normalShiftHours}
-        fullOvertimeDay={fullOvertime}
-        onChange={handleOvertimeChange}
-      />
-
-      {!entry ? (
-        <label className="checkbox-field">
-          <input
-            type="checkbox"
-            checked={rememberUsualShift}
-            onChange={(event) => onRememberUsualShiftChange(event.target.checked)}
-          />
-          Use these times next time
-        </label>
-      ) : null}
-
-      <div className="form-footer-total">
-        Month total after save: <strong>{formatTotalHours(projectedTotal)}</strong>
-        {!entry && monthTotalHours > 0 ? (
-          <> (currently {formatTotalHours(monthTotalHours)})</>
-        ) : null}
-      </div>
-
-      {error ? <div className="inline-note error">{error}</div> : null}
-
-      <div className="form-actions">
-        <button type="submit" className="primary-button">
-          Save overtime
+        <button
+          type="button"
+          className="accent-button usual-times-chip"
+          onClick={applyUsualTimes}
+        >
+          Use usual times ({usualTimesLabel})
         </button>
-        <button type="button" className="secondary-button" onClick={onCancel}>
-          Cancel
-        </button>
+
+        <BreakPicker value={breakOption} onChange={handleBreakChange} />
+
+        <div className="full-ot-toggle">
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              checked={fullOvertime}
+              onChange={(event) => handleFullOvertimeChange(event.target.checked)}
+            />
+            Whole shift is overtime (weekend / bank holiday)
+          </label>
+          {autoFullOvertime ? (
+            <p className="day-picker-selected">{dayTypeHint()}</p>
+          ) : null}
+        </div>
+
+        <OvertimeField
+          value={shift}
+          calculatedValue={calculated.text}
+          overridden={shiftOverridden}
+          onSiteMinutes={calculated.onSiteMinutes}
+          normalShiftHours={normalShiftHours}
+          fullOvertimeDay={fullOvertime}
+          onChange={handleOvertimeChange}
+        />
+
+        {!entry ? (
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              checked={rememberUsualShift}
+              onChange={(event) => onRememberUsualShiftChange(event.target.checked)}
+            />
+            Use these times next time
+          </label>
+        ) : null}
+
+        <div className="form-footer-total">
+          Month total after save: <strong>{formatTotalHours(projectedTotal)}</strong>
+          {!entry && monthTotalHours > 0 ? (
+            <> (currently {formatTotalHours(monthTotalHours)})</>
+          ) : null}
+        </div>
+
+        {error ? (
+          <div ref={errorRef} className="inline-note error" role="alert">
+            {error}
+          </div>
+        ) : null}
+      </form>
+
+      <div className="action-bar form-action-bar">
+        <div className="action-bar-inner">
+          <button type="submit" className="primary-button" form="entry-form">
+            Save overtime
+          </button>
+          <button type="button" className="secondary-button" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
       </div>
-    </form>
+    </>
   );
 }

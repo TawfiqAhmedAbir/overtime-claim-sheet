@@ -62,6 +62,11 @@ function readStorage(): StoredData {
         normalShiftHours: Number.isFinite(parsed.workSettings?.normalShiftHours)
           ? parsed.workSettings!.normalShiftHours
           : DEFAULT_WORK_SETTINGS.normalShiftHours,
+        monthRingGoalHours: Number.isFinite(
+          parsed.workSettings?.monthRingGoalHours,
+        )
+          ? parsed.workSettings!.monthRingGoalHours
+          : DEFAULT_WORK_SETTINGS.monthRingGoalHours,
       },
       preferences: {
         ...DEFAULT_PREFERENCES,
@@ -202,4 +207,40 @@ export function getMostRecentEntry(
 
 export function createEntryId(): string {
   return crypto.randomUUID();
+}
+
+export function exportBackupJson(): string {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) return raw;
+  return JSON.stringify(readStorage());
+}
+
+export function importBackupJson(json: string): boolean {
+  try {
+    const parsed = JSON.parse(json) as StoredData;
+    if (!parsed.profile || typeof parsed.entries !== 'object') return false;
+    writeStorage({
+      profile: parsed.profile,
+      entries: parsed.entries ?? {},
+      usualShift: normalizeUsualShift(parsed.usualShift),
+      workSettings: {
+        normalShiftHours: Number.isFinite(parsed.workSettings?.normalShiftHours)
+          ? parsed.workSettings!.normalShiftHours
+          : DEFAULT_WORK_SETTINGS.normalShiftHours,
+        monthRingGoalHours: Number.isFinite(
+          parsed.workSettings?.monthRingGoalHours,
+        )
+          ? parsed.workSettings!.monthRingGoalHours
+          : DEFAULT_WORK_SETTINGS.monthRingGoalHours,
+      },
+      preferences: {
+        ...DEFAULT_PREFERENCES,
+        ...parsed.preferences,
+        dismissedTips: parsed.preferences?.dismissedTips ?? [],
+      },
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }

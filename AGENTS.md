@@ -26,7 +26,7 @@ The downloaded file must come from the **exact bundled template**:
 
 ---
 
-## Current status (V3 — shipped)
+## Current status (V6 — shipped)
 
 | Area | Status |
 |------|--------|
@@ -39,28 +39,47 @@ The downloaded file must come from the **exact bundled template**:
 | GitHub Pages auto-deploy on push to `main` | Done |
 | Excel opens without recovery warning | Fixed (`stripFormulaResults`) |
 | Warm UI, ConfirmSheet, share/download | Done (V2) |
-| Scroll-wheel time/break/overtime pickers | Done (V3) |
 | Auto overtime calculation | Done (V3) |
 | Normal shift length in Settings (default 4 hr) | Done (V3) |
 | Weekend + UK bank holiday full-OT days | Done (V3) |
-| Overtime override via scroll only (no typing) | Done (V3) |
+| **Native time inputs (start/finish)** | Done (V6) |
+| **Full form on one screen (no wizard)** | Done (V6) |
+| **Break: 3 chips + Other dropdown** | Done (V6) |
+| **Overtime override via dropdown** | Done (V6) |
 
 ---
 
 ## How the app works (user flow)
 
 1. Open app → current month, profile snippet, total hours hero
-2. **+ Add overtime** or **Same as last time** → scroll pickers for date, start, finish, break
-3. App **calculates overtime** and shows it — scroll to override if wrong
-4. **Download claim sheet** → share or download → `Claim Sheet {Month} {Year}.xlsx`
+2. **+ Add overtime** or **Same as last time** → **all fields visible at once** on one screen
+3. Tap **Start time** / **Finish time** → phone’s native time picker (Android: clock dial; iPhone: scroll wheels)
+4. **Break:** tap **No break** / **30 min** / **1 hour**, or **Other…** → dropdown (15 min, 45 min, 1 hr 30, 2 hr)
+5. App **calculates overtime** and shows it — change via **dropdown** only if wrong (no free typing)
+6. **Download claim sheet** → share or download → `Claim Sheet {Month} {Year}.xlsx`
 
 **Business rules:**
 
 - **One entry per calendar day** (Excel has one row per day). Adding the same day again **replaces** the existing entry.
-- **Column D (Shift)** = overtime as text (`5 hour 30 min`) — **auto-calculated** by default; user may override via scroll wheel only (no free typing).
+- **Column D (Shift)** = overtime as text (`5 hour 30 min`) — **auto-calculated** by default; user may override via **dropdown** only (valid Excel format guaranteed).
 - **Overtime formula (weekday):** `(finish − start − break) − normalShiftHours` (normal shift from Settings, default **4 hr**).
-- **Weekends + UK bank holidays:** whole on-site time counts as overtime (no normal-shift subtraction). Manual **“Whole shift is overtime”** toggle for edge cases (option C).
+- **Weekends + UK bank holidays:** whole on-site time counts as overtime (no normal-shift subtraction). Manual **“Whole shift is overtime”** toggle for edge cases.
 - **Times** in E/F and break in G are still written to Excel as entered.
+
+---
+
+## UX history (do not repeat without user asking)
+
+These were tried and **rejected** by the user (mom + developer):
+
+| Approach | Why dropped |
+|----------|-------------|
+| Scroll button lists (V3) | Ugly; page jumped to overtime (`scrollIntoView`) |
+| Drum / wheel pickers (V4) | Still unintuitive on phone |
+| +/- steppers (V5) | Absurd tap count (e.g. 45 taps for `:45`) |
+| Start → Next → Finish wizard (V4–V5) | User wants everything on one screen |
+
+**Current (V6):** native `<input type="time">`, chips + `<select>` for break/overtime. If user asks to change time UX again, discuss **typed time** or **hour/minute dropdowns** — not steppers or custom scroll wheels.
 
 ---
 
@@ -114,10 +133,12 @@ public/template.xlsx     ← exact Synnovis template (never generate from scratc
 src/
   App.tsx
   components/
-    ScrollPicker, TimeScrollPicker, BreakScrollPicker, OvertimeScrollPicker
+    TimeField.tsx        ← native type="time" (start/finish)
+    BreakPicker.tsx      ← 3 chips + Other select
+    OvertimeField.tsx    ← auto calc hero + breakdown + override select
     DayPicker, EntryForm, EntryList, Settings, DownloadModal, ConfirmSheet, StatCard
   lib/
-    hours.ts             ← calculateOvertime, formatShiftClaimFromMinutes
+    hours.ts             ← calculateOvertime, formatShiftClaimFromMinutes, break options
     bankHolidays.ts      ← UK bank holiday dates (extend annually)
     excel.ts, storage.ts, dates.ts
   types.ts               ← WorkSettings, UsualShift, OvertimeEntry
@@ -147,7 +168,7 @@ npm run test:overtime  # overtime calc unit tests — must pass after hours.ts c
 
 ## Deployment
 
-**Shipped:** V1 Aug 2026, V2 UI/UX Aug 2026, V3 auto overtime Aug 2026 — live on GitHub Pages.
+**Shipped:** V1 Aug 2026, V2 UI/UX Aug 2026, V3 auto overtime Aug 2026, V6 simple native inputs Aug 2026 — live on GitHub Pages.
 
 Push to **`main`** → GitHub Actions (`.github/workflows/deploy.yml`) builds with `npm ci && npm run build` and deploys `dist/` to Pages.
 
@@ -160,27 +181,36 @@ Push to **`main`** → GitHub Actions (`.github/workflows/deploy.yml`) builds wi
 
 **Pushing workflow files:** `gh`/git token needs **`workflow`** scope or GitHub rejects `.github/workflows/*` updates.
 
-**After code changes:** push to `main`, then check [Actions](https://github.com/TawfiqAhmedAbir/overtime-claim-sheet/actions) — deploy usually completes in ~1 min.
+**After code changes:** push to `main`, then check [Actions](https://github.com/TawfiqAhmedAbir/overtime-claim-sheet/actions) — deploy usually completes in ~1 min. Mom may need to **hard refresh** or re-open from home screen after deploy (PWA cache).
 
 ---
 
-## V4 backlog (not built yet)
+## V7 backlog (not built yet)
 
 Prioritise only when user asks:
 
-1. **Export/backup** entries for new phone (JSON import/export UI)
-2. **Month-end reminder** — needs notification permission strategy
-3. **Code-split ExcelJS** — reduce main bundle size
-4. **Extend bank holiday list** beyond 2027 automatically
+1. ~~**Alternative time input on Android**~~ — **shipped:** hour + minute dropdowns on Android; iPhone keeps native `type="time"`. Optional later: typed `07:45` or Settings override.
+2. ~~**Export/backup** entries for new phone~~ — **shipped:** JSON export/import in Settings.
+3. **Month-end reminder** — needs notification permission strategy
+4. **Code-split ExcelJS** — reduce main bundle size
+5. **Extend bank holiday list** beyond 2027 automatically
+
+---
+
+## V6 backlog (shipped Aug 2026)
+
+1. ~~Native time inputs for start/finish~~
+2. ~~Remove start/finish wizard — full form on one screen~~
+3. ~~Break 3 chips + Other dropdown~~
+4. ~~Overtime override dropdown (no free typing)~~
 
 ---
 
 ## V3 backlog (shipped Aug 2026)
 
 1. ~~Auto overtime calculation~~
-2. ~~Scroll-wheel time/break/overtime pickers~~
-3. ~~Normal shift in Settings~~
-4. ~~Weekend + bank holiday rules~~
+2. ~~Normal shift in Settings~~
+3. ~~Weekend + bank holiday rules~~
 
 ---
 
@@ -202,8 +232,9 @@ Prioritise only when user asks:
 3. **If employer sends a new template:** replace `public/template.xlsx`, re-run golden test, adjust cell map if layout changed.
 4. **If mom reports wrong rows/dates:** check H7 UTC handling and `dayToRow()` in `src/lib/dates.ts`.
 5. **If Excel recovery dialog returns:** inspect sheet XML for `<v>NaN</v>`; ensure `stripFormulaResults()` still runs before save.
-6. **For new features:** keep mobile-first UX, plain English labels, minimal scope. User prefers plan-first; reply with plan and wait for **Go** before large changes.
-7. **Do not commit** unless the user explicitly asks.
+6. **If mom reports stale UI on phone:** PWA cache — hard refresh or remove/re-add home screen shortcut after deploy.
+7. **For new features:** keep mobile-first UX, plain English labels, minimal scope. User prefers plan-first; reply with plan and wait for **Go** before large changes.
+8. **Do not commit** unless the user explicitly asks.
 
 ---
 
