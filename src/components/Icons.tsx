@@ -52,21 +52,6 @@ export function DownloadIcon({ size = 24, className }: IconProps) {
   );
 }
 
-export function ShareIcon({ size = 24, className }: IconProps) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M12 3a1 1 0 0 1 .8.4l3.5 4.67a1 1 0 1 1-1.6 1.2L13 6.67V14a1 1 0 1 1-2 0V6.67L9.3 9.27a1 1 0 1 1-1.6-1.2l3.5-4.67A1 1 0 0 1 12 3ZM5 13a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3 1 1 0 1 0 0 2 1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1 1 1 0 1 0 0-2Z" />
-    </svg>
-  );
-}
-
 export function SettingsIcon({ size = 24, className }: IconProps) {
   return (
     <svg

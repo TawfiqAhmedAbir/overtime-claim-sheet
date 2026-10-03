@@ -9,7 +9,6 @@ import {
   timeStringToDate,
 } from './dates';
 import { formatTotalHours, sumShiftHours } from './hours';
-import { canShareFile, shareFile } from './share';
 
 const TEMPLATE_URL = `${import.meta.env.BASE_URL}template.xlsx`;
 
@@ -147,41 +146,6 @@ export async function prepareClaimSheet(
 
 export function downloadPreparedClaimSheet(prepared: PreparedClaimSheet): void {
   triggerDownload(prepared.blob, prepared.fileName);
-}
-
-export function claimSheetFile(prepared: PreparedClaimSheet): File {
-  return new File([prepared.blob], prepared.fileName, {
-    type: prepared.blob.type,
-  });
-}
-
-export async function shareOrDownloadClaimSheet(
-  selection: MonthSelection,
-  profile: Profile,
-  entries: OvertimeEntry[],
-  mode: 'share' | 'download' = 'download',
-): Promise<'shared' | 'downloaded'> {
-  const prepared = await prepareClaimSheet(selection, profile, entries);
-  const file = claimSheetFile(prepared);
-
-  if (mode === 'share' && canShareFile(file)) {
-    try {
-      await shareFile(file, { title: prepared.fileName });
-      return 'shared';
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        throw error;
-      }
-      if (error instanceof DOMException && error.name === 'NotAllowedError') {
-        downloadPreparedClaimSheet(prepared);
-        return 'downloaded';
-      }
-      throw error;
-    }
-  }
-
-  downloadPreparedClaimSheet(prepared);
-  return 'downloaded';
 }
 
 export { downloadFileName, loadTemplate };

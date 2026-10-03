@@ -13,7 +13,6 @@ import {
   PlusIcon,
   RepeatIcon,
   SettingsIcon,
-  ShareIcon,
 } from './components/Icons';
 import {
   addMonths,
@@ -27,17 +26,10 @@ import { useAndroidInstall } from './hooks/useAndroidInstall';
 import { useHorizontalSwipe } from './hooks/useHorizontalSwipe';
 import { lightHaptic } from './lib/haptics';
 import {
-  claimSheetFile,
   downloadPreparedClaimSheet,
   prepareClaimSheet,
   type PreparedClaimSheet,
 } from './lib/excel';
-import {
-  canShareFile,
-  canShareSpreadsheetFile,
-  isShareDenied,
-  shareFile,
-} from './lib/share';
 import { sumShiftHours } from './lib/hours';
 import {
   deleteEntry,
@@ -74,9 +66,7 @@ const COACH_TIPS_BASE = [
   },
   {
     id: 'download',
-    message: 'Tap the share icon at the top to send your claim sheet.',
-    messageNoShare:
-      'Tap the download icon at the top to get your claim sheet.',
+    message: 'Tap the download icon at the top to get your claim sheet.',
   },
 ] as const;
 
@@ -113,7 +103,6 @@ export default function App() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [showDownload, setShowDownload] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [preparingSheet, setPreparingSheet] = useState(false);
   const [preparedSheet, setPreparedSheet] = useState<PreparedClaimSheet | null>(
     null,
@@ -284,55 +273,11 @@ export default function App() {
     });
   }
 
-  const canShareClaimSheet = useMemo(() => canShareSpreadsheetFile(), []);
-
-  function handleDownload(mode: 'share' | 'download') {
+  function handleDownload() {
     if (!preparedSheet) return;
-
-    if (mode === 'download') {
-      downloadPreparedClaimSheet(preparedSheet);
-      setShowDownload(false);
-      setToast({ message: 'Saved to your phone' });
-      return;
-    }
-
-    const file = claimSheetFile(preparedSheet);
-    if (!canShareFile(file)) {
-      downloadPreparedClaimSheet(preparedSheet);
-      setShowDownload(false);
-      setToast({ message: 'Saved to your phone — attach it from Downloads' });
-      return;
-    }
-
-    setDownloading(true);
-    shareFile(file, { title: preparedSheet.fileName })
-      .then(() => {
-        setShowDownload(false);
-        setToast({ message: 'Claim sheet ready' });
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return;
-        }
-        if (isShareDenied(error)) {
-          downloadPreparedClaimSheet(preparedSheet);
-          setShowDownload(false);
-          setToast({
-            message: 'Saved to your phone — attach it from Downloads',
-          });
-          return;
-        }
-        setConfirm({
-          title: 'Could not create file',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Could not create the claim sheet.',
-          alertOnly: true,
-          onConfirm: () => setConfirm(null),
-        });
-      })
-      .finally(() => setDownloading(false));
+    downloadPreparedClaimSheet(preparedSheet);
+    setShowDownload(false);
+    setToast({ message: 'Saved to your phone' });
   }
 
   function handleMonthChange(next: MonthSelection) {
@@ -354,17 +299,7 @@ export default function App() {
     setEntries(loadEntries(month));
   }
 
-  const coachTips = useMemo(
-    () =>
-      COACH_TIPS_BASE.map((tip) => ({
-        id: tip.id,
-        message:
-          tip.id === 'download' && !canShareClaimSheet
-            ? tip.messageNoShare
-            : tip.message,
-      })),
-    [canShareClaimSheet],
-  );
+  const coachTips = COACH_TIPS_BASE;
 
   const activeCoachTip = coachTips.find(
     (tip) => !preferences.dismissedTips.includes(tip.id),
@@ -443,15 +378,11 @@ export default function App() {
             <button
               type="button"
               className="icon-button"
-              aria-label={
-                canShareClaimSheet
-                  ? 'Share claim sheet'
-                  : 'Download claim sheet'
-              }
+              aria-label="Download claim sheet"
               disabled={entries.length === 0}
               onClick={() => setShowDownload(true)}
             >
-              {canShareClaimSheet ? <ShareIcon /> : <DownloadIcon />}
+              <DownloadIcon />
             </button>
             <button
               type="button"
@@ -651,7 +582,6 @@ export default function App() {
         <DownloadModal
           selection={selection}
           entries={entries}
-          loading={downloading}
           preparing={preparingSheet || preparedSheet === null}
           onConfirm={handleDownload}
           onClose={() => setShowDownload(false)}

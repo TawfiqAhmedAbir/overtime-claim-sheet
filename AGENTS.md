@@ -38,7 +38,7 @@ The downloaded file must come from the **exact bundled template**:
 | PWA + offline after first visit | Done |
 | GitHub Pages auto-deploy on push to `main` | Done |
 | Excel opens without recovery warning | Fixed (`stripFormulaResults`) |
-| Warm UI, ConfirmSheet, share/download | Done (V2) |
+| Warm UI, ConfirmSheet, download | Done (V2) |
 | Auto overtime calculation | Done (V3) |
 | Normal shift length in Settings (default 4 hr) | Done (V3) |
 | Weekend + UK bank holiday full-OT days | Done (V3) |
@@ -59,7 +59,7 @@ The downloaded file must come from the **exact bundled template**:
 4. Tap **Start time** / **Finish time** → phone’s native time picker (Android: clock dial; iPhone: scroll wheels)
 5. **Break:** tap **No break** / **30 min** / **1 hour**, or **Other…** → dropdown (15 min, 45 min, 1 hr 30, 2 hr)
 6. App **calculates overtime** and shows it — change via **dropdown** only if wrong (no free typing)
-7. **Send claim sheet** (share icon on phone when supported) → **Share…** opens the **system share sheet** (whatever apps the phone offers), or **Save to this phone** → `Claim Sheet {Month} {Year}.xlsx`
+7. **Download claim sheet** → `Claim Sheet {Month} {Year}.xlsx` saved on the phone.
 
 **Business rules:**
 
@@ -195,7 +195,7 @@ Prioritise only when user asks:
 
 1. ~~**Alternative time input on Android**~~ — **shipped:** hour + minute dropdowns on Android; iPhone keeps native `type="time"`. Optional later: typed `07:45` or Settings override.
 2. ~~**Export/backup** entries for new phone~~ — **shipped:** JSON export/import in Settings.
-3. ~~**Share-first claim sheet UX**~~ — **shipped:** system share sheet on supported mobile browsers (`src/lib/share.ts`).
+3. ~~**Share-first claim sheet UX**~~ — removed. Chrome will not put an Excel file on the Android share sheet, so the claim sheet is download only.
 4. **Month-end reminder** — needs notification permission strategy
 5. **Code-split ExcelJS** — reduce main bundle size
 6. **Extend bank holiday list** beyond 2027 automatically
