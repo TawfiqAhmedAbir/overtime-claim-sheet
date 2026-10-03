@@ -13,11 +13,13 @@ import {
   SettingsIcon,
 } from './components/Icons';
 import {
+  addMonths,
   currentMonth,
   formatEntryDate,
   formatMonthLabel,
   monthKeysEqual,
 } from './lib/dates';
+import { useHorizontalSwipe } from './hooks/useHorizontalSwipe';
 import { shareOrDownloadClaimSheet } from './lib/excel';
 import { sumShiftHours } from './lib/hours';
 import {
@@ -238,6 +240,11 @@ export default function App() {
     setEntries(loadEntries(next));
   }
 
+  const monthSwipe = useHorizontalSwipe(
+    () => handleMonthChange(addMonths(selection, 1)),
+    () => handleMonthChange(addMonths(selection, -1)),
+  );
+
   function handleSameAsLastTime() {
     const last = getMostRecentEntry(selection);
     if (!last) return;
@@ -304,7 +311,10 @@ export default function App() {
         <>
           <StatCard totalHours={totalHours} entryCount={entries.length} />
 
-          <section className="summary-card">
+          <section
+            className="summary-card summary-card--swipe"
+            {...monthSwipe}
+          >
             <MonthPicker value={selection} onChange={handleMonthChange} />
             {entries.length > 0 ? (
               <button
@@ -312,7 +322,7 @@ export default function App() {
                 className="accent-button same-as-last"
                 onClick={handleSameAsLastTime}
               >
-                <RepeatIcon size={18} />
+                <RepeatIcon />
                 Same as last time
               </button>
             ) : null}
@@ -424,7 +434,7 @@ export default function App() {
                 setScreen('add');
               }}
             >
-              <PlusIcon size={18} />
+              <PlusIcon />
               Add overtime
             </button>
           </div>

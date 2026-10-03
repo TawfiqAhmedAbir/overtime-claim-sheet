@@ -1,26 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { ClockIcon } from './Icons';
 import { formatHoursShort } from '../lib/hours';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 
 interface StatCardProps {
   totalHours: number;
   entryCount: number;
 }
 
-function usePrefersReducedMotion() {
-  const [reduce, setReduce] = useState(() =>
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onChange = () => setReduce(media.matches);
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, []);
-
-  return reduce;
-}
+const MONTH_RING_GOAL_HOURS = 40;
+const RING_SIZE = 76;
+const STROKE = 7;
+const RADIUS = (RING_SIZE - STROKE) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 function useAnimatedHours(target: number, reduce: boolean) {
   const [value, setValue] = useState(target);
@@ -60,15 +51,43 @@ export default function StatCard({ totalHours, entryCount }: StatCardProps) {
   const reduceMotion = usePrefersReducedMotion();
   const animated = useAnimatedHours(totalHours, reduceMotion);
   const shown = Math.abs(animated - totalHours) < 0.02 ? totalHours : animated;
+  const progress = Math.min(shown / MONTH_RING_GOAL_HOURS, 1);
+  const dashOffset = CIRCUMFERENCE * (1 - progress);
 
   return (
     <div className="stat-card">
-      <div className="stat-card-icon">
-        <ClockIcon size={22} />
+      <div className="stat-card-ring-wrap" aria-hidden="true">
+        <svg
+          className="stat-card-ring"
+          width={RING_SIZE}
+          height={RING_SIZE}
+          viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+        >
+          <circle
+            className="stat-card-ring-track"
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RADIUS}
+            fill="none"
+            strokeWidth={STROKE}
+          />
+          <circle
+            className="stat-card-ring-progress"
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RADIUS}
+            fill="none"
+            strokeWidth={STROKE}
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={dashOffset}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
+          />
+        </svg>
+        <strong className="stat-card-ring-value">{formatHoursShort(shown)}</strong>
       </div>
       <div className="stat-card-body">
         <span className="stat-card-label">Total this month</span>
-        <strong className="stat-card-value">{formatHoursShort(shown)}</strong>
         <span className="stat-card-meta">
           {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
         </span>

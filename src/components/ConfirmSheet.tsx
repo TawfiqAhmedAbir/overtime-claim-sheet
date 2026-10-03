@@ -1,3 +1,5 @@
+import { useModalEnter } from '../hooks/useModalEnter';
+
 interface ConfirmSheetProps {
   open: boolean;
   title: string;
@@ -21,11 +23,13 @@ export default function ConfirmSheet({
   onConfirm,
   onCancel,
 }: ConfirmSheetProps) {
+  const entered = useModalEnter(open);
+
   if (!open) return null;
 
   return (
     <div
-      className="modal-backdrop"
+      className={entered ? 'modal-backdrop is-open' : 'modal-backdrop'}
       role="presentation"
       onClick={onCancel}
     >

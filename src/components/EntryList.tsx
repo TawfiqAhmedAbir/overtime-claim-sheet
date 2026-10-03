@@ -5,8 +5,10 @@ import {
   dayOfWeekIndex,
   formatEntryDate,
   formatTimeLabel,
+  isBankHoliday,
+  isWeekend,
 } from '../lib/dates';
-import { ClipboardIcon } from './Icons';
+import EmptyMonthIllustration from './EmptyMonthIllustration';
 
 interface EntryListProps {
   selection: MonthSelection;
@@ -36,9 +38,7 @@ export default function EntryList({
   if (entries.length === 0) {
     return (
       <div className="empty-state panel">
-        <div className="empty-state-icon">
-          <ClipboardIcon />
-        </div>
+        <EmptyMonthIllustration className="empty-state-illustration" />
         <strong>No overtime saved yet</strong>
         <p>Tap “Add overtime” when you work extra hours this month.</p>
       </div>
@@ -106,6 +106,11 @@ function EntryRow({
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dateLabel = formatEntryDate(selection, entry.day);
+  const dayBadge = isBankHoliday(selection, entry.day)
+    ? 'Bank holiday'
+    : isWeekend(selection, entry.day)
+      ? 'Weekend'
+      : null;
 
   function setBoth(next: number) {
     offsetRef.current = next;
@@ -228,7 +233,12 @@ function EntryRow({
           onPointerUp={finishDrag}
           onPointerCancel={finishDrag}
         >
-          <div className="entry-date">{dateLabel}</div>
+          <div className="entry-date-row">
+            <div className="entry-date">{dateLabel}</div>
+            {dayBadge ? (
+              <span className="entry-day-badge">{dayBadge}</span>
+            ) : null}
+          </div>
           <div className="entry-meta">
             {formatTimeLabel(entry.start)} – {formatTimeLabel(entry.finish)}
             {' · '}

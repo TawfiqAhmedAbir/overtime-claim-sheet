@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { MonthSelection, OvertimeEntry } from '../types';
 import { formatMonthLabel } from '../lib/dates';
 import { formatTotalHours, sumShiftHours } from '../lib/hours';
+import { useModalEnter } from '../hooks/useModalEnter';
 import { DownloadIcon, ShareIcon } from './Icons';
 
 interface DownloadModalProps {
@@ -19,6 +20,7 @@ export default function DownloadModal({
   onConfirm,
   onClose,
 }: DownloadModalProps) {
+  const entered = useModalEnter(true);
   const total = sumShiftHours(entries.map((entry) => entry.shift));
 
   const canShare = useMemo(() => {
@@ -35,7 +37,7 @@ export default function DownloadModal({
 
   return (
     <div
-      className="modal-backdrop"
+      className={entered ? 'modal-backdrop is-open' : 'modal-backdrop'}
       role="presentation"
       onClick={onClose}
     >
@@ -67,7 +69,7 @@ export default function DownloadModal({
               disabled={loading}
               onClick={() => onConfirm('share')}
             >
-              <ShareIcon size={18} />
+              <ShareIcon />
               {loading ? 'Preparing file…' : 'Share with work'}
             </button>
           ) : null}
@@ -77,7 +79,7 @@ export default function DownloadModal({
             disabled={loading}
             onClick={() => onConfirm('download')}
           >
-            <DownloadIcon size={18} />
+            <DownloadIcon />
             {loading ? 'Preparing file…' : canShare ? 'Download instead' : 'Download now'}
           </button>
           <button
