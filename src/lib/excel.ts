@@ -131,22 +131,56 @@ function triggerDownload(blob: Blob, fileName: string): void {
   URL.revokeObjectURL(url);
 }
 
+export interface PreparedClaimSheet {
+  blob: Blob;
+  fileName: string;
+}
+
+export async function prepareClaimSheet(
+  selection: MonthSelection,
+  profile: Profile,
+  entries: OvertimeEntry[],
+): Promise<PreparedClaimSheet> {
+  const blob = await generateClaimSheet(selection, profile, entries);
+  return { blob, fileName: downloadFileName(selection) };
+}
+
+export function downloadPreparedClaimSheet(prepared: PreparedClaimSheet): void {
+  triggerDownload(prepared.blob, prepared.fileName);
+}
+
+export function claimSheetFile(prepared: PreparedClaimSheet): File {
+  return new File([prepared.blob], prepared.fileName, {
+    type: prepared.blob.type,
+  });
+}
+
 export async function shareOrDownloadClaimSheet(
   selection: MonthSelection,
   profile: Profile,
   entries: OvertimeEntry[],
   mode: 'share' | 'download' = 'download',
 ): Promise<'shared' | 'downloaded'> {
-  const blob = await generateClaimSheet(selection, profile, entries);
-  const fileName = downloadFileName(selection);
-  const file = new File([blob], fileName, { type: blob.type });
+  const prepared = await prepareClaimSheet(selection, profile, entries);
+  const file = claimSheetFile(prepared);
 
   if (mode === 'share' && canShareFile(file)) {
-    await shareFile(file, { title: fileName });
-    return 'shared';
+    try {
+      await shareFile(file, { title: prepared.fileName });
+      return 'shared';
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw error;
+      }
+      if (error instanceof DOMException && error.name === 'NotAllowedError') {
+        downloadPreparedClaimSheet(prepared);
+        return 'downloaded';
+      }
+      throw error;
+    }
   }
 
-  triggerDownload(blob, fileName);
+  downloadPreparedClaimSheet(prepared);
   return 'downloaded';
 }
 

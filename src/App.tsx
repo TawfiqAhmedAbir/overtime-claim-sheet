@@ -26,8 +26,18 @@ import {
 import { useAndroidInstall } from './hooks/useAndroidInstall';
 import { useHorizontalSwipe } from './hooks/useHorizontalSwipe';
 import { lightHaptic } from './lib/haptics';
-import { shareOrDownloadClaimSheet } from './lib/excel';
-import { canShareSpreadsheetFile } from './lib/share';
+import {
+  claimSheetFile,
+  downloadPreparedClaimSheet,
+  prepareClaimSheet,
+  type PreparedClaimSheet,
+} from './lib/excel';
+import {
+  canShareFile,
+  canShareSpreadsheetFile,
+  isShareDenied,
+  shareFile,
+} from './lib/share';
 import { sumShiftHours } from './lib/hours';
 import {
   deleteEntry,
@@ -104,6 +114,10 @@ export default function App() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [showDownload, setShowDownload] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [preparingSheet, setPreparingSheet] = useState(false);
+  const [preparedSheet, setPreparedSheet] = useState<PreparedClaimSheet | null>(
+    null,
+  );
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [leavingEntry, setLeavingEntry] = useState<OvertimeEntry | null>(null);
   const selectionRef = useRef(selection);
@@ -129,6 +143,42 @@ export default function App() {
     const timer = window.setTimeout(() => setToast(null), toast.onAction ? 5000 : 2400);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (!showDownload) {
+      setPreparingSheet(false);
+      setPreparedSheet(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setPreparingSheet(true);
+    setPreparedSheet(null);
+    prepareClaimSheet(selection, profile, entries)
+      .then((prepared) => {
+        if (!cancelled) setPreparedSheet(prepared);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setShowDownload(false);
+        setConfirm({
+          title: 'Could not create file',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Could not create the claim sheet.',
+          alertOnly: true,
+          onConfirm: () => setConfirm(null),
+        });
+      })
+      .finally(() => {
+        if (!cancelled) setPreparingSheet(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showDownload, selection, profile, entries]);
 
   const totalHours = useMemo(
     () => sumShiftHours(entries.map((entry) => entry.shift)),
@@ -236,40 +286,53 @@ export default function App() {
 
   const canShareClaimSheet = useMemo(() => canShareSpreadsheetFile(), []);
 
-  async function handleDownload(mode: 'share' | 'download') {
-    try {
-      setDownloading(true);
-      const result = await shareOrDownloadClaimSheet(
-        selection,
-        profile,
-        entries,
-        mode,
-      );
+  function handleDownload(mode: 'share' | 'download') {
+    if (!preparedSheet) return;
+
+    if (mode === 'download') {
+      downloadPreparedClaimSheet(preparedSheet);
       setShowDownload(false);
-      setToast({
-        message:
-          result === 'shared'
-            ? 'Claim sheet ready'
-            : mode === 'share'
-              ? 'Saved to your phone — attach it from Downloads'
-              : 'Saved to your phone',
-      });
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return;
-      }
-      setConfirm({
-        title: 'Could not create file',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Could not create the claim sheet.',
-        alertOnly: true,
-        onConfirm: () => setConfirm(null),
-      });
-    } finally {
-      setDownloading(false);
+      setToast({ message: 'Saved to your phone' });
+      return;
     }
+
+    const file = claimSheetFile(preparedSheet);
+    if (!canShareFile(file)) {
+      downloadPreparedClaimSheet(preparedSheet);
+      setShowDownload(false);
+      setToast({ message: 'Saved to your phone — attach it from Downloads' });
+      return;
+    }
+
+    setDownloading(true);
+    shareFile(file, { title: preparedSheet.fileName })
+      .then(() => {
+        setShowDownload(false);
+        setToast({ message: 'Claim sheet ready' });
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        if (isShareDenied(error)) {
+          downloadPreparedClaimSheet(preparedSheet);
+          setShowDownload(false);
+          setToast({
+            message: 'Saved to your phone — attach it from Downloads',
+          });
+          return;
+        }
+        setConfirm({
+          title: 'Could not create file',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Could not create the claim sheet.',
+          alertOnly: true,
+          onConfirm: () => setConfirm(null),
+        });
+      })
+      .finally(() => setDownloading(false));
   }
 
   function handleMonthChange(next: MonthSelection) {
@@ -340,9 +403,10 @@ export default function App() {
         onInstall={() => {
           void install.promptInstall();
         }}
-        onComplete={(nextProfile, normalShiftHours) => {
-          completeSetup(nextProfile, normalShiftHours);
+        onComplete={(nextProfile, normalShiftHours, nextUsual) => {
+          completeSetup(nextProfile, normalShiftHours, nextUsual);
           setProfile(nextProfile);
+          setUsualShift(nextUsual);
           setWorkSettings({
             ...DEFAULT_WORK_SETTINGS,
             ...workSettings,
@@ -588,6 +652,7 @@ export default function App() {
           selection={selection}
           entries={entries}
           loading={downloading}
+          preparing={preparingSheet || preparedSheet === null}
           onConfirm={handleDownload}
           onClose={() => setShowDownload(false)}
         />

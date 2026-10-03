@@ -46,14 +46,14 @@ The downloaded file must come from the **exact bundled template**:
 | **Full form on one screen (no wizard)** | Done (V6) |
 | **Break: 3 chips + Other dropdown** | Done (V6) |
 | **Overtime override via dropdown** | Done (V6) |
-| First-run setup (name, job, site, normal shift) | Done — new phones only; existing saved data skips it |
+| First-run setup (name, job, site, normal shift, start, finish, break) | Done — new phones only; existing saved data skips it |
 | Android “Add to home screen” | Done — button on first visit, then one line until opened from the icon |
 
 ---
 
 ## How the app works (user flow)
 
-1. First open on a new phone → enter name, job, site, and normal shift. That is saved on the phone. A phone that already has saved data skips this. On Android, **Add to home screen** opens the install box; if they skip it, one line stays at the top until the app is opened from the icon. iPhone has no install guidance.
+1. First open on a new phone → enter name, job, site, normal shift, start time, finish time, and break. That is saved on the phone. A phone that already has saved data skips this. On Android, **Add to home screen** opens the install box; if they skip it, one line stays at the top until the app is opened from the icon. iPhone has no install guidance.
 2. Open app → current month, profile snippet, total hours hero
 3. **+ Add overtime** or **Same as last time** → **all fields visible at once** on one screen
 4. Tap **Start time** / **Finish time** → phone’s native time picker (Android: clock dial; iPhone: scroll wheels)

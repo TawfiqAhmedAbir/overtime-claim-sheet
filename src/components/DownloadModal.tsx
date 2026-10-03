@@ -9,6 +9,7 @@ interface DownloadModalProps {
   selection: MonthSelection;
   entries: OvertimeEntry[];
   loading: boolean;
+  preparing: boolean;
   onConfirm: (mode: 'share' | 'download') => void;
   onClose: () => void;
 }
@@ -17,6 +18,7 @@ export default function DownloadModal({
   selection,
   entries,
   loading,
+  preparing,
   onConfirm,
   onClose,
 }: DownloadModalProps) {
@@ -57,21 +59,21 @@ export default function DownloadModal({
             <button
               type="button"
               className="primary-button"
-              disabled={loading}
+              disabled={loading || preparing}
               onClick={() => onConfirm('share')}
             >
               <ShareIcon />
-              {loading ? 'Preparing file…' : 'Share…'}
+              {preparing ? 'Preparing file…' : 'Share…'}
             </button>
           ) : null}
           <button
             type="button"
             className={canShare ? 'secondary-button' : 'primary-button'}
-            disabled={loading}
+            disabled={loading || preparing}
             onClick={() => onConfirm('download')}
           >
             <DownloadIcon />
-            {loading
+            {preparing
               ? 'Preparing file…'
               : canShare
                 ? 'Save to this phone'

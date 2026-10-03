@@ -8,7 +8,7 @@ import {
 } from '../lib/hours';
 
 interface BreakPickerProps {
-  value: BreakOption;
+  value: BreakOption | null;
   onChange: (value: BreakOption) => void;
 }
 
@@ -17,7 +17,7 @@ const BREAK_OTHER_OPTIONS = BREAK_OPTIONS.filter(
 );
 
 export default function BreakPicker({ value, onChange }: BreakPickerProps) {
-  const initialCustom = !isQuickBreakOption(value);
+  const initialCustom = value !== null && !isQuickBreakOption(value);
   const [showCustom, setShowCustom] = useState(initialCustom);
 
   function selectQuick(option: BreakOption) {
@@ -27,13 +27,16 @@ export default function BreakPicker({ value, onChange }: BreakPickerProps) {
 
   function selectOther() {
     setShowCustom(true);
-    if (isQuickBreakOption(value) && BREAK_OTHER_OPTIONS[0]) {
+    if (value !== null && !isQuickBreakOption(value)) return;
+    if (BREAK_OTHER_OPTIONS[0]) {
       onChange(BREAK_OTHER_OPTIONS[0] as BreakOption);
     }
   }
 
-  const quickActive = !showCustom && isQuickBreakOption(value);
-  const otherActive = showCustom || !isQuickBreakOption(value);
+  const quickActive =
+    value !== null && !showCustom && isQuickBreakOption(value);
+  const otherActive =
+    value !== null && (showCustom || !isQuickBreakOption(value));
 
   return (
     <div className="break-picker">
@@ -58,7 +61,7 @@ export default function BreakPicker({ value, onChange }: BreakPickerProps) {
         </button>
       </div>
 
-      {showCustom || !isQuickBreakOption(value) ? (
+      {value !== null && (showCustom || !isQuickBreakOption(value)) ? (
         <div className="field break-picker-custom">
           <label htmlFor="break-other">Other break length</label>
           <select

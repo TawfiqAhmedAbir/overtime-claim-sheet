@@ -1,19 +1,26 @@
 import { useState } from 'react';
+import BreakPicker from './BreakPicker';
+import TimeField from './TimeField';
 import {
   formatShiftClaimFromMinutes,
   normalShiftHoursFromText,
   normalShiftOptions,
 } from '../lib/hours';
+import type { BreakOption, UsualShift } from '../types';
 import { JOB_TITLES, SITES, DEFAULT_WORK_SETTINGS } from '../types';
 
 interface SetupScreenProps {
   showInstall: boolean;
   onInstall: () => void;
-  onComplete: (profile: {
-    name: string;
-    jobTitle: string;
-    site: string;
-  }, normalShiftHours: number) => void;
+  onComplete: (
+    profile: {
+      name: string;
+      jobTitle: string;
+      site: string;
+    },
+    normalShiftHours: number,
+    usualShift: UsualShift,
+  ) => void;
 }
 
 export default function SetupScreen({
@@ -27,16 +34,25 @@ export default function SetupScreen({
   const [normalShiftHours, setNormalShiftHours] = useState(
     DEFAULT_WORK_SETTINGS.normalShiftHours,
   );
+  const [start, setStart] = useState('');
+  const [finish, setFinish] = useState('');
+  const [breakOption, setBreakOption] = useState<BreakOption | null>(null);
   const normalShiftText = formatShiftClaimFromMinutes(Math.round(normalShiftHours * 60));
   const normalOptions = normalShiftOptions(8);
-  const canSave = name.trim().length > 0;
+  const canSave =
+    name.trim().length > 0 &&
+    start !== '' &&
+    finish !== '' &&
+    breakOption !== null;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!canSave) return;
+    if (breakOption === null) return;
     onComplete(
       { name: name.trim(), jobTitle, site },
       normalShiftHours,
+      { start, finish, break: breakOption },
     );
   }
 
@@ -109,6 +125,22 @@ export default function SetupScreen({
             ))}
           </select>
         </div>
+
+        <TimeField
+          id="setup-start"
+          label="Start time"
+          value={start}
+          onChange={setStart}
+        />
+
+        <TimeField
+          id="setup-finish"
+          label="Finish time"
+          value={finish}
+          onChange={setFinish}
+        />
+
+        <BreakPicker value={breakOption} onChange={setBreakOption} />
 
         <div className="form-actions">
           <button type="submit" className="primary-button" disabled={!canSave}>

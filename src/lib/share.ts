@@ -24,6 +24,13 @@ export function canShareFile(file: File): boolean {
   }
 }
 
+export function isShareDenied(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === 'NotAllowedError') {
+    return true;
+  }
+  return error instanceof Error && error.message === 'Permission denied';
+}
+
 export async function shareFile(
   file: File,
   options?: { title?: string; text?: string },

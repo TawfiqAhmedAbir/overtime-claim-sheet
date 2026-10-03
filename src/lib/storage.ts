@@ -88,13 +88,18 @@ export function hasCompletedSetup(): boolean {
   }
 }
 
-export function completeSetup(profile: Profile, normalShiftHours: number): void {
+export function completeSetup(
+  profile: Profile,
+  normalShiftHours: number,
+  usualShift: UsualShift,
+): void {
   writeStorage({
     ...emptyData({
       name: profile.name.trim(),
       jobTitle: profile.jobTitle,
       site: profile.site,
     }),
+    usualShift,
     workSettings: {
       ...DEFAULT_WORK_SETTINGS,
       normalShiftHours: Number.isFinite(normalShiftHours)

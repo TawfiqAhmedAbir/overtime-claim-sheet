@@ -18,12 +18,28 @@ const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) =>
 
 export default function TimeField({ id, label, value, onChange }: TimeFieldProps) {
   const [simplePicker, setSimplePicker] = useState(false);
+  const [draftHour, setDraftHour] = useState('');
+  const [draftMinute, setDraftMinute] = useState('');
 
   useEffect(() => {
     setSimplePicker(isAndroid());
   }, []);
 
-  const { hour, minute } = useMemo(() => splitTime(value), [value]);
+  useEffect(() => {
+    if (!value) return;
+    const parts = splitTime(value);
+    setDraftHour(parts.hour);
+    setDraftMinute(parts.minute);
+  }, [value]);
+
+  const { hour, minute } = useMemo(() => {
+    if (!value) return { hour: draftHour, minute: draftMinute };
+    return splitTime(value);
+  }, [draftHour, draftMinute, value]);
+
+  function commit(nextHour: string, nextMinute: string) {
+    if (nextHour && nextMinute) onChange(joinTime(nextHour, nextMinute));
+  }
 
   if (!simplePicker) {
     return (
@@ -50,8 +66,13 @@ export default function TimeField({ id, label, value, onChange }: TimeFieldProps
             id={`${id}-hour`}
             className="time-select-input"
             value={hour}
-            onChange={(event) => onChange(joinTime(event.target.value, minute))}
+            onChange={(event) => {
+              const nextHour = event.target.value;
+              setDraftHour(nextHour);
+              commit(nextHour, minute);
+            }}
           >
+            <option value="">Hour</option>
             {HOUR_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -65,8 +86,13 @@ export default function TimeField({ id, label, value, onChange }: TimeFieldProps
             id={`${id}-minute`}
             className="time-select-input"
             value={minute}
-            onChange={(event) => onChange(joinTime(hour, event.target.value))}
+            onChange={(event) => {
+              const nextMinute = event.target.value;
+              setDraftMinute(nextMinute);
+              commit(hour, nextMinute);
+            }}
           >
+            <option value="">Minute</option>
             {MINUTE_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
