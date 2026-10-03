@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ConfirmSheet from './components/ConfirmSheet';
 import DownloadModal from './components/DownloadModal';
 import EntryForm from './components/EntryForm';
@@ -12,7 +12,12 @@ import {
   RepeatIcon,
   SettingsIcon,
 } from './components/Icons';
-import { currentMonth, formatEntryDate, formatMonthLabel } from './lib/dates';
+import {
+  currentMonth,
+  formatEntryDate,
+  formatMonthLabel,
+  monthKeysEqual,
+} from './lib/dates';
 import { shareOrDownloadClaimSheet } from './lib/excel';
 import { sumShiftHours } from './lib/hours';
 import {
@@ -66,12 +71,20 @@ export default function App() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [showDownload, setShowDownload] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [leavingEntry, setLeavingEntry] = useState<OvertimeEntry | null>(null);
+  const selectionRef = useRef(selection);
+  const leavingMonthRef = useRef<MonthSelection | null>(null);
+  const deleteGuard = useRef<string | null>(null);
+  selectionRef.current = selection;
 
   useEffect(() => {
     setEntries(loadEntries(selection));
     setScreen('home');
     setEditingEntry(undefined);
     setAddDraft(undefined);
+    setHighlightedId(null);
+    setLeavingEntry(null);
   }, [selection]);
 
   useEffect(() => {
@@ -110,7 +123,31 @@ export default function App() {
     setScreen('home');
     setEditingEntry(undefined);
     setAddDraft(undefined);
+    setHighlightedId(null);
+    window.requestAnimationFrame(() => setHighlightedId(entry.id));
     showSavedMessage(entry);
+  }
+
+  function commitDelete(entry: OvertimeEntry) {
+    if (deleteGuard.current === entry.id) return;
+    const month = leavingMonthRef.current;
+    if (!month || !monthKeysEqual(selectionRef.current, month)) {
+      setLeavingEntry(null);
+      return;
+    }
+    deleteGuard.current = entry.id;
+    setLeavingEntry(null);
+    const next = deleteEntry(month, entry.id);
+    setEntries(next);
+    setToast({
+      message: 'Entry deleted',
+      actionLabel: 'Undo',
+      onAction: () => {
+        const restored = restoreEntry(month, entry);
+        setEntries(restored);
+        setToast({ message: 'Entry restored' });
+      },
+    });
   }
 
   function requestDelete(entry: OvertimeEntry) {
@@ -121,20 +158,34 @@ export default function App() {
       variant: 'danger',
       onConfirm: () => {
         setConfirm(null);
-        const next = deleteEntry(selection, entry.id);
-        setEntries(next);
-        setToast({
-          message: 'Entry deleted',
-          actionLabel: 'Undo',
-          onAction: () => {
-            const restored = restoreEntry(selection, entry);
-            setEntries(restored);
-            setToast({ message: 'Entry restored' });
-          },
-        });
+        const reduceMotion = window.matchMedia(
+          '(prefers-reduced-motion: reduce)',
+        ).matches;
+        if (reduceMotion) {
+          leavingMonthRef.current = selection;
+          deleteGuard.current = null;
+          commitDelete(entry);
+          return;
+        }
+        deleteGuard.current = null;
+        leavingMonthRef.current = selection;
+        setLeavingEntry(entry);
       },
     });
   }
+
+  useEffect(() => {
+    if (!leavingEntry) return undefined;
+    const entry = leavingEntry;
+    const timer = window.setTimeout(() => commitDelete(entry), 420);
+    return () => window.clearTimeout(timer);
+  }, [leavingEntry]);
+
+  useEffect(() => {
+    if (!highlightedId) return undefined;
+    const timer = window.setTimeout(() => setHighlightedId(null), 1200);
+    return () => window.clearTimeout(timer);
+  }, [highlightedId]);
 
   function handleDuplicateDay(day: number, onReplace: () => void) {
     setConfirm({
@@ -182,6 +233,11 @@ export default function App() {
     }
   }
 
+  function handleMonthChange(next: MonthSelection) {
+    setSelection(next);
+    setEntries(loadEntries(next));
+  }
+
   function handleSameAsLastTime() {
     const last = getMostRecentEntry(selection);
     if (!last) return;
@@ -198,7 +254,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={screen === 'home' ? 'app-shell app-shell--home' : 'app-shell'}>
       <header className="top-bar">
         <div className="brand">
           <h1>Overtime Claim</h1>
@@ -210,14 +266,25 @@ export default function App() {
           ) : null}
         </div>
         {screen === 'home' ? (
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => setScreen('settings')}
-            aria-label="Settings"
-          >
-            <SettingsIcon />
-          </button>
+          <div className="top-bar-actions">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Download claim sheet"
+              disabled={entries.length === 0}
+              onClick={() => setShowDownload(true)}
+            >
+              <DownloadIcon />
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => setScreen('settings')}
+              aria-label="Settings"
+            >
+              <SettingsIcon />
+            </button>
+          </div>
         ) : (
           <button
             type="button"
@@ -238,7 +305,17 @@ export default function App() {
           <StatCard totalHours={totalHours} entryCount={entries.length} />
 
           <section className="summary-card">
-            <MonthPicker value={selection} onChange={setSelection} />
+            <MonthPicker value={selection} onChange={handleMonthChange} />
+            {entries.length > 0 ? (
+              <button
+                type="button"
+                className="accent-button same-as-last"
+                onClick={handleSameAsLastTime}
+              >
+                <RepeatIcon size={18} />
+                Same as last time
+              </button>
+            ) : null}
           </section>
 
           <div className="section-heading">
@@ -246,15 +323,22 @@ export default function App() {
             <span>{entries.length}</span>
           </div>
 
-          <EntryList
-            selection={selection}
-            entries={entries}
-            onEdit={(entry) => {
-              setEditingEntry(entry);
-              setScreen('edit');
-            }}
-            onDelete={requestDelete}
-          />
+          <div key={`${selection.year}-${selection.month}`} className="entry-list-wrap">
+            <EntryList
+              selection={selection}
+              entries={entries}
+              highlightedId={highlightedId}
+              leavingId={leavingEntry?.id}
+              onEdit={(entry) => {
+                setEditingEntry(entry);
+                setScreen('edit');
+              }}
+              onDelete={requestDelete}
+              onLeaveComplete={() => {
+                if (leavingEntry) commitDelete(leavingEntry);
+              }}
+            />
+          </div>
         </>
       ) : null}
 
@@ -342,25 +426,6 @@ export default function App() {
             >
               <PlusIcon size={18} />
               Add overtime
-            </button>
-            {entries.length > 0 ? (
-              <button
-                type="button"
-                className="accent-button"
-                onClick={handleSameAsLastTime}
-              >
-                <RepeatIcon size={18} />
-                Same as last time
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="secondary-button"
-              disabled={entries.length === 0}
-              onClick={() => setShowDownload(true)}
-            >
-              <DownloadIcon size={18} />
-              Download claim sheet
             </button>
           </div>
         </div>
