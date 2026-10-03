@@ -56,7 +56,7 @@ The downloaded file must come from the **exact bundled template**:
 3. Tap **Start time** / **Finish time** → phone’s native time picker (Android: clock dial; iPhone: scroll wheels)
 4. **Break:** tap **No break** / **30 min** / **1 hour**, or **Other…** → dropdown (15 min, 45 min, 1 hr 30, 2 hr)
 5. App **calculates overtime** and shows it — change via **dropdown** only if wrong (no free typing)
-6. **Download claim sheet** → share or download → `Claim Sheet {Month} {Year}.xlsx`
+6. **Send claim sheet** (share icon on phone when supported) → **Share…** opens the **system share sheet** (whatever apps the phone offers), or **Save to this phone** → `Claim Sheet {Month} {Year}.xlsx`
 
 **Business rules:**
 
@@ -191,9 +191,10 @@ Prioritise only when user asks:
 
 1. ~~**Alternative time input on Android**~~ — **shipped:** hour + minute dropdowns on Android; iPhone keeps native `type="time"`. Optional later: typed `07:45` or Settings override.
 2. ~~**Export/backup** entries for new phone~~ — **shipped:** JSON export/import in Settings.
-3. **Month-end reminder** — needs notification permission strategy
-4. **Code-split ExcelJS** — reduce main bundle size
-5. **Extend bank holiday list** beyond 2027 automatically
+3. ~~**Share-first claim sheet UX**~~ — **shipped:** system share sheet on supported mobile browsers (`src/lib/share.ts`).
+4. **Month-end reminder** — needs notification permission strategy
+5. **Code-split ExcelJS** — reduce main bundle size
+6. **Extend bank holiday list** beyond 2027 automatically
 
 ---
 

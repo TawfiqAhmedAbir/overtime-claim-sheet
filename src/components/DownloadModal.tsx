@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 import type { MonthSelection, OvertimeEntry } from '../types';
 import { formatMonthLabel } from '../lib/dates';
 import { formatTotalHours, sumShiftHours } from '../lib/hours';
+import { canShareSpreadsheetFile } from '../lib/share';
 import { useModalEnter } from '../hooks/useModalEnter';
 import { DownloadIcon, ShareIcon } from './Icons';
 
@@ -22,18 +22,7 @@ export default function DownloadModal({
 }: DownloadModalProps) {
   const entered = useModalEnter(true);
   const total = sumShiftHours(entries.map((entry) => entry.shift));
-
-  const canShare = useMemo(() => {
-    if (typeof navigator === 'undefined' || !navigator.canShare) return false;
-    try {
-      const probe = new File([''], 'test.xlsx', {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      });
-      return navigator.canShare({ files: [probe] });
-    } catch {
-      return false;
-    }
-  }, []);
+  const canShare = canShareSpreadsheetFile();
 
   return (
     <div
@@ -48,7 +37,9 @@ export default function DownloadModal({
         aria-labelledby="download-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="download-title">Download claim sheet</h2>
+        <h2 id="download-title">
+          {canShare ? 'Send claim sheet' : 'Save claim sheet'}
+        </h2>
         <p>
           <strong>{formatMonthLabel(selection)}</strong>
         </p>
@@ -58,7 +49,7 @@ export default function DownloadModal({
         </p>
         <p>
           {canShare
-            ? 'Share or download your official Excel claim sheet with all saved overtime for this month.'
+            ? 'Share opens your phone’s usual list of apps (same as photos and files). Or save the sheet on this phone.'
             : 'This creates your official Excel claim sheet with all saved overtime for this month.'}
         </p>
         <div className="modal-actions">
@@ -70,7 +61,7 @@ export default function DownloadModal({
               onClick={() => onConfirm('share')}
             >
               <ShareIcon />
-              {loading ? 'Preparing file…' : 'Share with work'}
+              {loading ? 'Preparing file…' : 'Share…'}
             </button>
           ) : null}
           <button
@@ -80,7 +71,11 @@ export default function DownloadModal({
             onClick={() => onConfirm('download')}
           >
             <DownloadIcon />
-            {loading ? 'Preparing file…' : canShare ? 'Download instead' : 'Download now'}
+            {loading
+              ? 'Preparing file…'
+              : canShare
+                ? 'Save to this phone'
+                : 'Download'}
           </button>
           <button
             type="button"

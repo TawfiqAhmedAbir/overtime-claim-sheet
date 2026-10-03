@@ -12,6 +12,7 @@ import {
   PlusIcon,
   RepeatIcon,
   SettingsIcon,
+  ShareIcon,
 } from './components/Icons';
 import {
   addMonths,
@@ -24,6 +25,7 @@ import {
 import { useHorizontalSwipe } from './hooks/useHorizontalSwipe';
 import { lightHaptic } from './lib/haptics';
 import { shareOrDownloadClaimSheet } from './lib/excel';
+import { canShareSpreadsheetFile } from './lib/share';
 import { sumShiftHours } from './lib/hours';
 import {
   deleteEntry,
@@ -46,7 +48,7 @@ import type { EntryDraft, MonthSelection, OvertimeEntry, Profile } from './types
 
 type Screen = 'home' | 'add' | 'edit' | 'settings';
 
-const COACH_TIPS = [
+const COACH_TIPS_BASE = [
   {
     id: 'swipe-month',
     message: 'Swipe the month card left or right to change month.',
@@ -57,7 +59,9 @@ const COACH_TIPS = [
   },
   {
     id: 'download',
-    message: 'Tap the download icon at the top to get your claim sheet.',
+    message: 'Tap the share icon at the top to send your claim sheet.',
+    messageNoShare:
+      'Tap the download icon at the top to get your claim sheet.',
   },
 ] as const;
 
@@ -223,6 +227,8 @@ export default function App() {
     });
   }
 
+  const canShareClaimSheet = useMemo(() => canShareSpreadsheetFile(), []);
+
   async function handleDownload(mode: 'share' | 'download') {
     try {
       setDownloading(true);
@@ -236,8 +242,10 @@ export default function App() {
       setToast({
         message:
           result === 'shared'
-            ? 'Ready to share'
-            : 'Claim sheet downloaded',
+            ? 'Claim sheet ready'
+            : mode === 'share'
+              ? 'Saved to your phone — attach it from Downloads'
+              : 'Saved to your phone',
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -276,7 +284,19 @@ export default function App() {
     setEntries(loadEntries(month));
   }
 
-  const activeCoachTip = COACH_TIPS.find(
+  const coachTips = useMemo(
+    () =>
+      COACH_TIPS_BASE.map((tip) => ({
+        id: tip.id,
+        message:
+          tip.id === 'download' && !canShareClaimSheet
+            ? tip.messageNoShare
+            : tip.message,
+      })),
+    [canShareClaimSheet],
+  );
+
+  const activeCoachTip = coachTips.find(
     (tip) => !preferences.dismissedTips.includes(tip.id),
   );
 
@@ -331,11 +351,15 @@ export default function App() {
             <button
               type="button"
               className="icon-button"
-              aria-label="Download claim sheet"
+              aria-label={
+                canShareClaimSheet
+                  ? 'Share claim sheet'
+                  : 'Download claim sheet'
+              }
               disabled={entries.length === 0}
               onClick={() => setShowDownload(true)}
             >
-              <DownloadIcon />
+              {canShareClaimSheet ? <ShareIcon /> : <DownloadIcon />}
             </button>
             <button
               type="button"

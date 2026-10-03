@@ -9,6 +9,7 @@ import {
   timeStringToDate,
 } from './dates';
 import { formatTotalHours, sumShiftHours } from './hours';
+import { canShareFile, shareFile } from './share';
 
 const TEMPLATE_URL = `${import.meta.env.BASE_URL}template.xlsx`;
 
@@ -140,15 +141,8 @@ export async function shareOrDownloadClaimSheet(
   const fileName = downloadFileName(selection);
   const file = new File([blob], fileName, { type: blob.type });
 
-  if (
-    mode === 'share' &&
-    typeof navigator !== 'undefined' &&
-    navigator.canShare?.({ files: [file] })
-  ) {
-    await navigator.share({
-      files: [file],
-      title: fileName,
-    });
+  if (mode === 'share' && canShareFile(file)) {
+    await shareFile(file, { title: fileName });
     return 'shared';
   }
 
